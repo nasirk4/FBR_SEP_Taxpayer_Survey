@@ -1,8 +1,7 @@
 asgiref==3.9.2
 bleach==6.2.0
 Django==5.2.7
-dotenv==0.9.9
-narwhals==2.6.0
+narwhals==2.7.0
 numpy==2.2.6
 packaging==25.0
 pandas==2.3.3
