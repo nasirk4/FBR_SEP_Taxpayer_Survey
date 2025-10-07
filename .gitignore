@@ -1,0 +1,23 @@
+# Django
+*.pyc
+__pycache__/
+db.sqlite3
+/staticfiles/
+/media/
+/.env
+
+# VS Code
+.vscode/
+
+# Python
+*.log
+*.pot
+*.py[cod]
+*.swp
+*.bak
+*.tmp
+*.coverage
+*.egg-info/
+dist/
+build/
+.env

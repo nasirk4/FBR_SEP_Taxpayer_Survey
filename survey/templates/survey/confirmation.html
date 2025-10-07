@@ -1,0 +1,45 @@
+<!-- survey/templates/survey/confirmation.html -->
+{% extends "survey/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/confirmation_styles.css' %}">
+    <script src="{% static 'js/confirmation_script.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="confirmation-container">
+    <div class="confirmation-card">
+        <div class="confirmation-icon" role="img" aria-label="Success">✅</div>
+        <h1 class="page-title">Survey Submitted Successfully!</h1>
+
+        <div class="info-box success">
+            <p>Thank you for completing the FBR Tax Practitioner Survey. Your responses have been recorded and will contribute to improving Pakistan's taxation system.</p>
+        </div>
+
+        {% if reference_number %}
+        <div class="reference-section">
+            <div class="reference-detail-card">
+                <p class="reference-prefix">Your Reference Number is:</p>
+                <div class="reference-number" id="reference-number">{{ reference_number }}</div>
+                <p class="reference-note">Please keep it safe for future reference.</p>
+                <button type="button" id="copy-reference" class="btn btn-copy" aria-label="Copy reference number to clipboard">Copy Reference Number</button>   
+            </div>
+        </div>
+        {% else %}
+        <div class="warning-box">
+            <p>No reference number found. Please contact support if you need assistance.</p>
+        </div>
+        {% endif %}
+
+        <div class="confidentiality-note">
+            <strong>Confidentiality:</strong> All responses are strictly confidential and will be used only for research purposes.
+        </div>
+
+        <div class="action-buttons">
+            <a href="{% url 'survey:welcome' %}" class="btn btn-primary">Return to Home</a>
+            <button type="button" id="print-page" class="btn btn-secondary">Print Confirmation</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

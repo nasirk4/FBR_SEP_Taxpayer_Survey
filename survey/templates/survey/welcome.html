@@ -1,0 +1,55 @@
+{% extends "survey/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/welcome_styles.css' %}">
+    <script src="{% static 'js/welcome_script.js' %}"></script>
+{% endblock %}
+
+<!-- {% block progress_width %}0%{% endblock %} -->
+<!--{% block current_step %}1{% endblock %} -->
+
+{% block content %}
+<h1 class="page-title">Welcome to FBR Stakeholder Consultation 2025</h1>
+
+<div class="info-box">
+    <strong>About This Survey:</strong> This questionnaire is part of the Federal Board of Revenue's
+    stakeholder engagement initiative under the Pakistan Raises Revenue Program.
+</div>
+
+<div class="section">
+    <h2 class="section-title">📋 Survey Overview</h2>
+    <p>This comprehensive survey aims to gather expert feedback from legal practitioners and customs agents to enhance Pakistan's digital tax and customs systems.</p>
+
+    <div>
+        <h3>What to Expect:</h3>
+        <ul>
+            <li><strong>Duration:</strong> Approximately 20-25 minutes (15-20 minutes for single role)</li>
+            <li><strong>Sections:</strong> Respondent information, general questions, and specialized role-specific questions</li>
+            <li><strong>Confidentiality:</strong> All responses are strictly confidential. Optional follow-up interviews may be conducted with consent.</li>
+            <li><strong>Save Progress:</strong> Your responses are automatically saved as you proceed</li>
+        </ul>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-title">🎯 Survey Objectives</h2>
+    <p>The findings from this survey will help FBR:</p>
+    <ul>
+        <li>Identify technical and procedural challenges in digital systems (IRIS, WeBOC, PSW)</li>
+        <li>Enhance user experience and system reliability</li>
+        <li>Improve coordination between tax and customs digital platforms</li>
+        <li>Develop evidence-based improvements for stakeholder services</li>
+    </ul>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="buttons">
+        <div></div> <!-- Spacer -->
+        <button type="submit" class="btn btn-next">
+            Start Survey →
+        </button>
+    </div>
+</form>
+{% endblock %}

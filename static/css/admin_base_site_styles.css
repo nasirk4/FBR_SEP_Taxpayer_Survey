@@ -1,0 +1,24 @@
+/* static/css/admin_base_site_styles.css */
+/* Note: Styles like .dashboard-link could be consolidated with .export-btn from analytics_dashboard_styles.css into a shared common_styles.css for consistency. */
+
+.dashboard-link {
+    display: inline-block;
+    margin: 10px 15px;
+    padding: 10px 15px;
+    background: var(--primary-color, #4CAF50); /* Matches analytics_dashboard_styles.css */
+    color: var(--bg-white, #fff); /* Matches analytics_dashboard_styles.css */
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: all 0.3s ease; /* Matches --transition in analytics_dashboard_styles.css */
+}
+
+.dashboard-link:hover {
+    opacity: 0.9;
+    transform: translateY(-2px); /* Matches .export-btn hover in analytics_dashboard_styles.css */
+}
+
+.dashboard-link:focus {
+    outline: 3px solid var(--primary-color, #4CAF50);
+    outline-offset: 2px; /* Matches focus styles in analytics_dashboard_styles.css */
+}

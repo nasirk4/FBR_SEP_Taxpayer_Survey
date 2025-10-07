@@ -1,0 +1,265 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Survey Analytics Dashboard | FBR Survey Admin{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/analytics_dashboard_styles.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">Home</a> &rsaquo;
+        <a href="{% url 'admin:app_list' app_label='survey' %}">Survey</a> &rsaquo;
+        Analytics Dashboard
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- ARIA Live Region for Updates -->
+    <div aria-live="polite" class="sr-only" id="update-announcer"></div>
+
+    <!-- Error Handling -->
+    {% if error %}
+    <div class="error-message" role="alert">
+        <h3>⚠️ Error Loading Dashboard</h3>
+        <p>{{ error }}</p>
+        <button class="export-btn" onclick="window.location.reload()" aria-label="Retry loading dashboard">Retry</button>
+        <button class="dismiss-btn" aria-label="Dismiss error">✖</button>
+    </div>
+    {% endif %}
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1>📊 FBR Survey Analytics Dashboard</h1>
+        <div class="export-buttons">
+            <button class="export-btn" id="refresh-btn" aria-label="Refresh dashboard">🔄 Refresh</button>
+            <form action="{% url 'survey:export_survey_data' %}?type=excel" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="export-btn" aria-label="Export survey data to Excel">📊 Export to Excel</button>
+            </form>
+            <form action="{% url 'survey:export_survey_data' %}?type=spss" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="export-btn spss" aria-label="Export survey data for SPSS">📈 Export for SPSS</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Skeleton -->
+    {% if not summary_stats and not error %}
+    <div class="dashboard-stats">
+        <div class="stat-card skeleton-card skeleton"></div>
+        <div class="stat-card skeleton-card skeleton"></div>
+        <div class="stat-card skeleton-card skeleton"></div>
+        <div class="stat-card skeleton-card skeleton"></div>
+    </div>
+    {% endif %}
+
+    <!-- Summary Statistics -->
+    {% if summary_stats %}
+    <div class="dashboard-stats">
+        <div class="stat-card" role="region" aria-labelledby="total-responses">
+            <h3 id="total-responses">Total Responses</h3>
+            <div class="value" data-stat="total">{{ summary_stats.total_responses|default:0 }}</div>
+            <div class="sub-value">Target: {{ summary_stats.total_target|default:60 }}</div>
+        </div>
+        <!-- ... rest of stat cards unchanged ... -->
+        <div class="stat-card {% if quota_status.total.percentage >= 100 %}quota-completed{% elif quota_status.total.percentage >= 50 %}quota-inprogress{% else %}quota-low{% endif %}" role="region" aria-labelledby="overall-progress">
+            <h3 id="overall-progress">Overall Progress</h3>
+            <div class="value" data-stat="progress">{{ quota_status.total.percentage|default:0 }}%</div>
+            <div class="sub-value">{{ quota_status.total.achieved|default:0 }}/{{ quota_status.total.target|default:60 }}</div>
+            <div class="progress-bar" role="progressbar" aria-valuenow="{{ quota_status.total.percentage|default:0 }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-fill {% if quota_status.total.percentage >= 100 %}progress-high{% elif quota_status.total.percentage >= 50 %}progress-medium{% else %}progress-low{% endif %}" style="width: {{ quota_status.total.percentage|default:0 }}%"></div>
+            </div>
+        </div>
+        <div class="stat-card" role="region" aria-labelledby="latest-submission">
+            <h3 id="latest-submission">Latest Submission</h3>
+            <div class="value">
+                {% if summary_stats.latest_submission and summary_stats.latest_submission != "N/A" %}
+                    {{ summary_stats.latest_submission|date:"M d, Y" }}
+                {% else %}
+                    No submissions
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-card" role="region" aria-labelledby="response-timeline">
+            <h3 id="response-timeline">Response Timeline (7 days)</h3>
+            <div class="value">{{ timeline_data|length|default:0 }}</div>
+            <div class="sub-value">Days with responses</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quota Status -->
+    {% if quota_status %}
+    <div class="analysis-section">
+        <h2>🎯 Sampling Quota Status</h2>
+        {% if visualizations.quota_chart %}
+        <div class="chart-container">
+            {{ visualizations.quota_chart|safe }}
+        </div>
+        {% endif %}
+        <div class="quota-table-container scrollable">
+            <table class="quota-table" role="grid" aria-labelledby="quota-status">
+                <thead>
+                    <tr>
+                        <th data-label="Province">Province</th>
+                        <th data-label="Role">Role</th>
+                        <th data-label="Achieved">Achieved</th>
+                        <th data-label="Target">Target</th>
+                        <th data-label="Progress">Progress</th>
+                        <th data-label="Status">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for province, roles in quota_status.items %}
+                        {% if province != 'total' %}
+                        {% for role, status in roles.items %}
+                        <tr class="{% if status.percentage >= 100 %}completed{% elif status.percentage >= 50 %}inprogress{% else %}low{% endif %}">
+                            <td data-label="Province"><strong>{{ province|upper }}</strong></td>
+                            <td data-label="Role">{{ role|title }}</td>
+                            <td data-label="Achieved">{{ status.achieved|default:0 }}</td>
+                            <td data-label="Target">{{ status.target|default:0 }}</td>
+                            <td data-label="Progress">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="{{ status.percentage|default:0 }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-fill {% if status.percentage >= 100 %}progress-high{% elif status.percentage >= 50 %}progress-medium{% else %}progress-low{% endif %}" style="width: {{ status.percentage|default:0 }}%"></div>
+                                </div>
+                                {{ status.percentage|default:0 }}%
+                            </td>
+                            <td data-label="Status">
+                                <span class="status-indicator">
+                                    {% if status.percentage >= 100 %}✅ Completed
+                                    {% elif status.percentage >= 50 %}🟡 In Progress
+                                    {% else %}🔴 Needs Attention{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">No quota data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Professional Role Distribution -->
+    {% if summary_stats.role_distribution %}
+    <div class="analysis-section">
+        <h2>👥 Professional Role Distribution</h2>
+        <div class="quota-table-container scrollable">
+            <table class="quota-table" role="grid" aria-labelledby="role-distribution">
+                <thead>
+                    <tr>
+                        <th data-label="Role">Role</th>
+                        <th data-label="Count">Count</th>
+                        <th data-label="Percentage">Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role, count in summary_stats.role_distribution.items %}
+                    <tr>
+                        <td data-label="Role">{{ role|title }}</td>
+                        <td data-label="Count">{{ count }}</td>
+                        <td data-label="Percentage">{% widthratio count summary_stats.total_responses 100 %}%</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="empty-state">No role distribution data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Qualitative Insights -->
+    {% if qualitative_insights %}
+    <div class="analysis-section">
+        <h2>💭 Qualitative Insights</h2>
+        <div class="qualitative-search">
+            <input type="text" id="qualitative-search" placeholder="Search insights..." aria-label="Search qualitative insights">
+            <button type="button" class="export-btn" id="export-qualitative" aria-label="Export qualitative data to CSV">📥 Export Qualitative Data</button>
+        </div>
+        {% for section, insights in qualitative_insights.items %}
+        <div class="qualitative-section" data-section="{{ section }}">
+            <h3 tabindex="0" aria-expanded="true" aria-controls="qualitative-{{ section }}">{{ section|title }}</h3>
+            <div class="qualitative-box visible" id="qualitative-{{ section }}">
+                {% if insights %}
+                    {% for insight in insights %}
+                    <div class="qualitative-item" data-text="{{ insight|lower }}">
+                        <span class="insight-text">{{ insight|truncatewords:30|default:"No content" }}</span>
+                        <div class="word-count">Words: {{ insight|wordcount }}</div>
+                        <span class="sentiment" data-sentiment="neutral">Neutral</span>
+                        {% if insight|length > 30 %}
+                        <button class="read-more" aria-expanded="false">Read More</button>
+                        <div class="full-text" style="display: none;">{{ insight }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <p>No responses yet for this section</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Response Timeline -->
+    {% if timeline_data %}
+    <div class="analysis-section">
+        <h2>📅 Response Timeline (Last 7 Days)</h2>
+        <div class="quota-table-container scrollable">
+            <table class="quota-table" role="grid" aria-labelledby="response-timeline">
+                <thead>
+                    <tr>
+                        <th data-label="Date">Date</th>
+                        <th data-label="Responses">Responses</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for date, count in timeline_data.items %}
+                    <tr>
+                        <td data-label="Date">{{ date }}</td>
+                        <td data-label="Responses">{{ count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="empty-state">No timeline data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- No Data State -->
+    {% if not summary_stats and not error %}
+    <div class="empty-state">
+        <h3>📊 No Survey Data Available</h3>
+        <p>Start collecting survey responses to see analytics here.</p>
+    </div>
+    {% endif %}
+
+    <script>
+        window.DASHBOARD_CONFIG = {
+            apiStatsUrl: "{% url 'survey:api_dashboard_stats' %}",
+            csrfToken: "{{ csrf_token }}",
+            updateInterval: 30000,
+            timeout: 10000
+        };
+    </script>
+    <script src="{% static 'js/analytics_dashboard_script.js' %}"></script>
+</div>
+{% endblock %}

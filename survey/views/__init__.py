@@ -1,0 +1,11 @@
+# survey/views/__init__.py
+from .welcome_views import welcome_view
+from .respondent_info_views import respondent_info_view
+from .generic_questions_views import generic_questions_view
+from .role_specific_questions_views import role_specific_questions_view
+from .cross_system_perspectives_views import cross_system_perspectives_view
+from .final_remarks_views import final_remarks_view
+from .confirmation_views import confirmation_view
+from .save_progress_views import save_progress_view
+from .analytics_dashboard_views import debug_admin_urls_view
+from .analytics_dashboard_views import admin_dashboard_view, api_dashboard_stats

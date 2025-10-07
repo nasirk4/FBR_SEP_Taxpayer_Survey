@@ -1,0 +1,85 @@
+/* static/css/welcome_styles.css */
+.page-title {
+    color: var(--fbr-blue, #003087);
+    font-size: clamp(1.8rem, 4vw, 2.2rem);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.info-box {
+    background: #e3f2fd;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    color: var(--fbr-blue, #003087);
+    font-size: clamp(1.4rem, 3vw, 1.6rem);
+    margin-bottom: 1rem;
+}
+
+.section ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.section ul li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.95rem;
+}
+
+.section ul li:last-child {
+    border-bottom: none;
+}
+
+.buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-next {
+    background-color: var(--fbr-blue, #003087);
+    color: #fff;
+}
+
+.btn-next:hover {
+    background-color: #002060;
+}
+
+@media (max-width: 600px) {
+    .page-title {
+        font-size: clamp(1.5rem, 3.5vw, 1.8rem);
+    }
+
+    .section-title {
+        font-size: clamp(1.2rem, 2.5vw, 1.4rem);
+    }
+
+    .info-box, .section ul li {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+}

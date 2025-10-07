@@ -1,0 +1,136 @@
+/* static/css/confirmation_styles.css */
+/* Note: Common styles (e.g., .page-title, .info-box) could be moved to a shared common_styles.css for consistency across templates. */
+
+/* Improved centering and padding for responsiveness */
+.confirmation-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 1rem;
+}
+
+/* Professional Card Look */
+.confirmation-card {
+    background: #ffffff;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    max-width: 550px;
+    width: 100%;
+    transition: transform 0.3s ease;
+}
+
+.confirmation-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    color: #4CAF50;
+}
+
+.page-title {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* Refined Info/Success Box */
+.info-box.success {
+    background: #e6f7e6;
+    border-left: 5px solid #4CAF50;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.info-box p {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #444;
+}
+
+/* Official Reference Section (Outer Container) - Acts as a light background block */
+.reference-section {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #f1f4f8;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+/* NEW: The inner card element for the reference number details */
+.reference-detail-card {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    text-align: center;
+}
+
+.reference-prefix {
+    color: #444;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0 0 0.5rem 0;
+}
+
+.reference-number {
+    font-size: clamp(1.5rem, 5vw, 2.2rem); /* Responsive font size */
+    font-weight: 700;
+    color: var(--fbr-blue, #004d99);
+    margin: 0 0 0.5rem 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    letter-spacing: 1px;
+    word-break: break-word; /* Prevents overflow for long numbers */
+    max-width: 100%; /* Ensures it stays within parent */
+}
+
+.reference-note {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.btn-copy {
+    background-color: #007bff;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+.btn-copy:hover {
+    background-color: #0056b3;
+}
+
+
+/* Authoritative Confidentiality Note */
+.confidentiality-note {
+    margin-top: 2rem;
+    padding: 1rem 1.5rem;
+    background: #f7f9fd;
+    border: 1px dashed #d0d7e0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.4;
+}
+
+/* Media Queries for Fine-Tuning */
+@media (max-width: 480px) {
+    .reference-number {
+        font-size: clamp(1.2rem, 4vw, 1.8rem); /* Smaller on very small screens */
+    }
+    .reference-detail-card {
+        padding: 1rem; /* Reduce padding on small screens */
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .reference-number {
+        font-size: clamp(1.5rem, 4.5vw, 2rem); /* Adjusted for tablets */
+    }
+}

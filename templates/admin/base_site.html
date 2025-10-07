@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | FBR Survey Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin_base_site_styles.css' %}">
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">FBR Survey Administration</a></h1>
+{% endblock %}
+
+{% block nav-global %}
+{{ block.super }}
+<a href="{% url 'survey:admin_dashboard' %}" class="dashboard-link" aria-label="Survey Analytics Dashboard">
+    📊 Survey Analytics Dashboard
+</a>
+{% endblock %}

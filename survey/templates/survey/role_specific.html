@@ -1,0 +1,564 @@
+{% extends "survey/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/role_specific_styles.css' %}">
+    <script src="{% static 'js/role_specific_script.js' %}"></script>
+{% endblock %}
+
+<!-- {% block progress_width %}50%{% endblock %} -->
+<!-- {% block current_step %}3{% endblock %} -->
+
+{% block content %}
+<h1 class="page-title">Role-Specific Questions</h1>
+
+<div class="info-box">
+    This section presents tailored questions based on your selected professional role(s).
+    {% if is_legal and is_customs %}
+    <p><strong>Note for Dual-Role Respondents:</strong> If you are both a Legal Practitioner and Customs Agent, please answer all relevant questions, but focus on unique challenges in each role to avoid redundancy.</p>
+    {% endif %}
+</div>
+
+{% if error %}
+<div class="error-box" id="error-box" role="alert">
+    <div class="error-icon">⚠️</div>
+    <div class="error-message">{{ error }}</div>
+</div>
+{% endif %}
+
+<form method="POST" id="roleSpecificForm" novalidate>
+    {% csrf_token %}
+
+    {% if is_legal %}
+    <!-- Legal Practitioner Questions -->
+    <div class="section">
+        <h2 class="section-title">⚖️ Legal Practitioner Questions</h2>
+        <p class="section-description">This section focuses on your experiences with the IRIS portal for tax legal practice (Income Tax, Sales Tax, Federal Excise Duty).</p>
+
+        <!-- LP1 -->
+        <div class="question-card">
+            <div class="question-text">LP1. How frequently do you encounter technical issues with the IRIS system?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp1_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp1_{{ value }}" name="lp1_technical_issues" value="{{ value }}" required
+                           {% if role_specific_answers.lp1_technical_issues == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp1_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp1_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP1.
+            </div>
+        </div>
+
+        <!-- LP2 -->
+        <div class="question-card" id="lp2_section" style="display: none;">
+            <div class="question-text">LP2. If you selected "Very frequently" or "Frequently" in LP1, which technical issues do you commonly face?</div>
+            <div class="checkbox-group compact">
+                {% for value, label in lp2_options %}
+                <div class="checkbox-item">
+                    <input type="checkbox" id="lp2_{{ value }}" name="lp2_common_problems" value="{{ value }}"
+                           {% if value in role_specific_answers.lp2_common_problems %}checked{% endif %}
+                           {% if value == 'other' %}onchange="toggleLP2Other()"{% endif %}>
+                    <label for="lp2_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp2_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select at least one technical issue for LP2.
+            </div>
+            <div id="lp2_other_specify" class="specify-textarea" style="display: none;">
+                <label for="lp2_other_text">Specify other issue:</label>
+                <textarea id="lp2_other_text" name="lp2_other_text" class="form-control" rows="3"
+                          aria-describedby="lp2_other_error_inline">{{ role_specific_answers.lp2_other_text|default:'' }}</textarea>
+                <div id="lp2_other_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                    ⚠️ Please specify details for 'Other' in LP2.
+                </div>
+            </div>
+        </div>
+
+        <!-- LP3 -->
+        <div class="question-card">
+            <div class="question-text">LP3. Which areas of the IRIS system need the most improvement? (Select up to 3)</div>
+            <div class="checkbox-group compact">
+                {% for value, label in lp3_options %}
+                <div class="checkbox-item">
+                    <input type="checkbox" id="lp3_{{ value }}" name="lp3_improvement_areas" value="{{ value }}"
+                           {% if value in role_specific_answers.lp3_improvement_areas %}checked{% endif %}
+                           {% if value == 'other' %}onchange="toggleLP3Other()"{% endif %}>
+                    <label for="lp3_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="selection-counter">Selected: <span id="lp3_counter">0</span>/3</div>
+            <div id="lp3_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select at least one improvement area for LP3.
+            </div>
+            <div id="lp3_other_specify" class="specify-textarea" style="display: none;">
+                <label for="lp3_other_text">Specify other area:</label>
+                <textarea id="lp3_other_text" name="lp3_other_text" class="form-control" rows="3"
+                          aria-describedby="lp3_other_error_inline">{{ role_specific_answers.lp3_other_text|default:'' }}</textarea>
+                <div id="lp3_other_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                    ⚠️ Please specify details for 'Other' in LP3.
+                </div>
+            </div>
+        </div>
+
+        <!-- LP4 -->
+        <div class="question-card">
+            <div class="question-text">LP4. Please indicate the procedures where you face challenges in the IRIS system:</div>
+            <div class="matrix-table-container">
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th class="procedure-name">Procedure</th>
+                            <th class="procedure-checkbox">Sales Tax / FED</th>
+                            <th class="procedure-checkbox">Income Tax</th>
+                            <th class="procedure-comment">Brief Comment (Optional)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for procedure, value, comment in lp4_procedures %}
+                        <tr>
+                            <td class="procedure-name">{{ procedure }}</td>
+                            <td class="procedure-checkbox">
+                                <input type="checkbox" id="lp4_{{ value }}_sales" name="lp4_{{ value }}_sales"
+                                       {% if role_specific_answers.lp4_procedures and value in role_specific_answers.lp4_procedures.sales %}checked{% endif %}
+                                       aria-label="Sales Tax / FED for {{ procedure }}">
+                            </td>
+                            <td class="procedure-checkbox">
+                                <input type="checkbox" id="lp4_{{ value }}_income" name="lp4_{{ value }}_income"
+                                       {% if role_specific_answers.lp4_procedures and value in role_specific_answers.lp4_procedures.income %}checked{% endif %}
+                                       aria-label="Income Tax for {{ procedure }}">
+                            </td>
+                            <td class="procedure-comment">
+                                <textarea name="lp4_{{ value }}_comment" class="form-control" rows="2"
+                                          placeholder="Optional comment..."
+                                          aria-describedby="lp4_error_inline">{{ comment|default:'' }}</textarea>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td class="procedure-name">
+                                <input type="text" id="lp4_other_procedure" name="lp4_other_procedure" class="form-control"
+                                       placeholder="Other procedure (optional)"
+                                       value="{% if role_specific_answers.lp4_other_procedure %}{{ role_specific_answers.lp4_other_procedure }}{% endif %}">
+                            </td>
+                            <td class="procedure-checkbox">
+                                <input type="checkbox" id="lp4_other_sales" name="lp4_other_sales"
+                                       {% if role_specific_answers.lp4_other_sales %}checked{% endif %}
+                                       aria-label="Sales Tax / FED for other procedure">
+                            </td>
+                            <td class="procedure-checkbox">
+                                <input type="checkbox" id="lp4_other_income" name="lp4_other_income"
+                                       {% if role_specific_answers.lp4_other_income %}checked{% endif %}
+                                       aria-label="Income Tax for other procedure">
+                            </td>
+                            <td class="procedure-comment">
+                                <textarea name="lp4_other_comment" class="form-control" rows="2"
+                                          placeholder="Optional comment..."
+                                          aria-describedby="lp4_error_inline">{% if role_specific_answers.lp4_other_comment %}{{ role_specific_answers.lp4_other_comment }}{% endif %}</textarea>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="lp4_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select at least one procedure or specify an "Other" procedure with a selection.
+            </div>
+        </div>
+
+        <!-- LP5 -->
+        <div class="question-card">
+            <div class="question-text">LP5. Which activities in legal representation pose significant challenges in IRIS? (Select up to 3)</div>
+            <div class="checkbox-group compact">
+                {% for value, label in lp5_options %}
+                <div class="checkbox-item">
+                    <input type="checkbox" id="lp5_{{ value }}" name="lp5_representation_challenges" value="{{ value }}"
+                           {% if value in role_specific_answers.lp5_representation_challenges %}checked{% endif %}
+                           {% if value == 'other' %}onchange="toggleLP5Other()"{% endif %}>
+                    <label for="lp5_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="selection-counter">Selected: <span id="lp5_counter">0</span>/3</div>
+            <div id="lp5_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select at least one challenge for LP5.
+            </div>
+            <div id="lp5_other_specify" class="specify-textarea" style="display: none;">
+                <label for="lp5_other_text">Specify other challenge:</label>
+                <textarea id="lp5_other_text" name="lp5_other_text" class="form-control" rows="3"
+                          aria-describedby="lp5_other_error_inline">{{ role_specific_answers.lp5_other_text|default:'' }}</textarea>
+                <div id="lp5_other_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                    ⚠️ Please specify details for 'Other' in LP5.
+                </div>
+            </div>
+        </div>
+
+        <!-- LP6 -->
+        <div class="question-card">
+            <div class="question-text">LP6. How efficient is the IRIS system for filing returns and other submissions?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp6_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp6_{{ value }}" name="lp6_filing_efficiency" value="{{ value }}" required
+                           {% if role_specific_answers.lp6_filing_efficiency == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp6_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp6_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP6.
+            </div>
+        </div>
+
+        <!-- LP7 -->
+        <div class="question-card">
+            <div class="question-text">LP7. How effective is the IRIS system for tracking case statuses?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp7_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp7_{{ value }}" name="lp7_case_tracking" value="{{ value }}" required
+                           {% if role_specific_answers.lp7_case_tracking == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp7_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp7_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP7.
+            </div>
+        </div>
+
+        <!-- LP8 -->
+        <div class="question-card">
+            <div class="question-text">LP8. How effective is the IRIS system’s communication of notices and updates?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp8_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp8_{{ value }}" name="lp8_notice_communication" value="{{ value }}" required
+                           {% if role_specific_answers.lp8_notice_communication == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp8_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp8_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP8.
+            </div>
+        </div>
+
+        <!-- LP9 -->
+        <div class="question-card">
+            <div class="question-text">LP9. How accessible are tax laws and regulations within the IRIS system?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp9_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp9_{{ value }}" name="lp9_law_accessibility" value="{{ value }}" required
+                           {% if role_specific_answers.lp9_law_accessibility == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp9_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp9_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP9.
+            </div>
+        </div>
+
+        <!-- LP10 -->
+        <div class="question-card">
+            <div class="question-text">LP10. How have recent changes in tax laws affected your practice via IRIS?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp10_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp10_{{ value }}" name="lp10_law_change_impact" value="{{ value }}" required
+                           {% if role_specific_answers.lp10_law_change_impact == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp10_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp10_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP10.
+            </div>
+        </div>
+
+        <!-- LP11 -->
+        <div class="question-card">
+            <div class="question-text">LP11. How effective is the IRIS system in supporting Alternate Dispute Resolution (ADR)?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp11_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp11_{{ value }}" name="lp11_adr_effectiveness" value="{{ value }}" required
+                           {% if role_specific_answers.lp11_adr_effectiveness == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp11_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp11_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP11.
+            </div>
+        </div>
+
+        <!-- LP12 -->
+        <div class="question-card">
+            <div class="question-text">LP12. How transparent is the IRIS system in handling disputes and appeals?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp12_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp12_{{ value }}" name="lp12_dispute_transparency" value="{{ value }}" required
+                           {% if role_specific_answers.lp12_dispute_transparency == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp12_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp12_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP12.
+            </div>
+        </div>
+
+        <!-- LP13 -->
+        <div class="question-card">
+            <div class="question-text">LP13. Overall, how satisfied are you with the IRIS system for your legal practice?</div>
+            <div class="radio-group compact">
+                {% for value, label in lp13_options %}
+                <div class="radio-item">
+                    <input type="radio" id="lp13_{{ value }}" name="lp13_overall_satisfaction" value="{{ value }}" required
+                           {% if role_specific_answers.lp13_overall_satisfaction == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="lp13_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="lp13_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for LP13.
+            </div>
+            <div class="question-text">Additional feedback (optional):</div>
+            <textarea name="lp13_feedback" class="form-control" rows="4"
+                      placeholder="Provide any additional feedback about the IRIS system...">{{ role_specific_answers.lp13_feedback|default:'' }}</textarea>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if is_customs %}
+    <!-- Customs Agent Questions -->
+    <div class="section">
+        <h2 class="section-title">📦 Customs Agent Questions</h2>
+        <p class="section-description">This section focuses on your experiences with the WeBOC and Pakistan Single Window (PSW) systems for customs clearance.</p>
+
+        <!-- CA1 -->
+        <div class="question-card">
+            <div class="question-text">CA1. Have you received formal training on WeBOC or the Pakistan Single Window (PSW)?</div>
+            <div class="radio-group compact">
+                {% for value, label in ca1_options %}
+                <div class="radio-item">
+                    <input type="radio" id="ca1_{{ value }}" name="ca1_training_received" value="{{ value }}" required
+                           {% if role_specific_answers.ca1_training_received == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="ca1_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca1_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for CA1.
+            </div>
+        </div>
+
+        <!-- CA1a -->
+        <div class="question-card" id="ca1a_section" style="display: none;">
+            <div class="question-text">CA1a. If you received training, how useful was it for your daily operations?</div>
+            <div class="radio-group compact">
+                {% for value, label in ca1a_options %}
+                <div class="radio-item">
+                    <input type="radio" id="ca1a_{{ value }}" name="ca1a_training_usefulness" value="{{ value }}"
+                           {% if role_specific_answers.ca1a_training_usefulness == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="ca1a_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca1a_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for CA1a.
+            </div>
+            <input type="hidden" id="ca1a_visible" name="ca1a_visible" value="0">
+        </div>
+
+        <!-- CA2 -->
+        <div class="question-card">
+            <div class="question-text">CA2. How well is the PSW integrated with WeBOC for your operations?</div>
+            <div class="radio-group compact">
+                {% for value, label in ca2_options %}
+                <div class="radio-item">
+                    <input type="radio" id="ca2_{{ value }}" name="ca2_psw_weboc_integration" value="{{ value }}" required
+                           {% if role_specific_answers.ca2_psw_weboc_integration == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="ca2_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca2_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for CA2.
+            </div>
+        </div>
+
+        <!-- CA3 -->
+        <div class="question-card">
+            <div class="question-text">CA3. Which procedures in WeBOC/PSW pose significant challenges? (Select up to 3, or "No significant challenges")</div>
+            <div class="checkbox-group compact">
+                {% for value, label in ca3_options %}
+                <div class="checkbox-item">
+                    <input type="checkbox" id="ca3_{{ value }}" name="ca3_procedure_challenges" value="{{ value }}"
+                           {% if value in role_specific_answers.ca3_procedure_challenges %}checked{% endif %}
+                           {% if value == 'other' %}onchange="toggleCA3Other()"{% endif %}
+                           {% if value == 'no_challenges' %}onchange="updateCA3State()"{% endif %}>
+                    <label for="ca3_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="selection-counter">Selected: <span id="ca3_counter">0</span>/3</div>
+            <div id="ca3_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select at least one option for CA3.
+            </div>
+            <div id="ca3_other_specify" class="specify-textarea" style="display: none;">
+                <label for="ca3_other_text">Specify other challenge:</label>
+                <textarea id="ca3_other_text" name="ca3_other_text" class="form-control" rows="3"
+                          aria-describedby="ca3_other_error_inline">{{ role_specific_answers.ca3_other_text|default:'' }}</textarea>
+                <div id="ca3_other_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                    ⚠️ Please specify details for 'Other' in CA3.
+                </div>
+            </div>
+        </div>
+
+        <!-- CA4 -->
+        <div class="question-card">
+            <div class="question-text">CA4. How transparent and predictable is the duty and tax assessment process in WeBOC/PSW?</div>
+            <div class="radio-group compact">
+                {% for value, label in ca4_options %}
+                <div class="radio-item">
+                    <input type="radio" id="ca4_{{ value }}" name="ca4_duty_assessment" value="{{ value }}" required
+                           {% if role_specific_answers.ca4_duty_assessment == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="ca4_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca4_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for CA4.
+            </div>
+        </div>
+
+        <!-- CA5 -->
+        <div class="question-card">
+            <div class="question-text">CA5. How does the PSW compare to WeBOC in terms of overall usability?</div>
+            <div class="radio-group compact">
+                {% for value, label in ca5_options %}
+                <div class="radio-item">
+                    <input type="radio" id="ca5_{{ value }}" name="ca5_psw_vs_weboc" value="{{ value }}" required
+                           {% if role_specific_answers.ca5_psw_vs_weboc == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="ca5_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca5_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for CA5.
+            </div>
+        </div>
+
+        <!-- CA6 -->
+        <div class="question-card">
+            <div class="question-text">CA6. How efficient is the cargo clearance process in WeBOC/PSW?</div>
+            <div class="radio-group compact">
+                {% for value, label in ca6_options %}
+                <div class="radio-item">
+                    <input type="radio" id="ca6_{{ value }}" name="ca6_cargo_efficiency" value="{{ value }}" required
+                           {% if role_specific_answers.ca6_cargo_efficiency == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="ca6_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca6_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for CA6.
+            </div>
+        </div>
+
+        <!-- CA7 -->
+        <div class="question-card">
+            <div class="question-text">CA7. How reliable is the WeBOC/PSW system in terms of uptime and performance?</div>
+            <div class="radio-group compact">
+                {% for value, label in ca7_options %}
+                <div class="radio-item">
+                    <input type="radio" id="ca7_{{ value }}" name="ca7_system_reliability" value="{{ value }}" required
+                           {% if role_specific_answers.ca7_system_reliability == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="ca7_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca7_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for CA7.
+            </div>
+        </div>
+
+        <!-- CA8 -->
+        <div class="question-card">
+            <div class="question-text">CA8. How have recent policy changes affected your operations in WeBOC/PSW?</div>
+            <div class="radio-group compact">
+                {% for value, label in ca8_options %}
+                <div class="radio-item">
+                    <input type="radio" id="ca8_{{ value }}" name="ca8_policy_impact" value="{{ value }}" required
+                           {% if role_specific_answers.ca8_policy_impact == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="ca8_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca8_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for CA8.
+            </div>
+        </div>
+
+        <!-- CA9 -->
+        <div class="question-card">
+            <div class="question-text">CA9. What are the primary operational challenges you face in WeBOC/PSW?</div>
+            <div class="checkbox-group compact">
+                {% for value, label in ca9_options %}
+                <div class="checkbox-item">
+                    <input type="checkbox" id="ca9_{{ value }}" name="ca9_operational_challenges" value="{{ value }}"
+                           {% if value in role_specific_answers.ca9_operational_challenges %}checked{% endif %}
+                           {% if value == 'other' %}onchange="toggleCA9Other()"{% endif %}>
+                    <label for="ca9_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="ca9_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select at least one operational challenge for CA9.
+            </div>
+            <div id="ca9_other_specify" class="specify-textarea" style="display: none;">
+                <label for="ca9_other_text">Specify other challenge:</label>
+                <textarea id="ca9_other_text" name="ca9_other_text" class="form-control" rows="3"
+                          aria-describedby="ca9_other_error_inline">{{ role_specific_answers.ca9_other_text|default:'' }}</textarea>
+                <div id="ca9_other_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                    ⚠️ Please specify details for 'Other' in CA9.
+                </div>
+            </div>
+            <div class="question-text">Additional feedback (optional):</div>
+            <textarea name="ca9_feedback" class="form-control" rows="4"
+                      placeholder="Provide any additional feedback about WeBOC/PSW...">{{ role_specific_answers.ca9_feedback|default:'' }}</textarea>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="buttons">
+        <button type="button" class="btn btn-back" onclick="handleBackNavigation('{% url 'survey:generic_questions' %}')">← Back</button>
+        <button type="submit" class="btn btn-next">Next →</button>
+    </div>
+</form>
+{% endblock %}

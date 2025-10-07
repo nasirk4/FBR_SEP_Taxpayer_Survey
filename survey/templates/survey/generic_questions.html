@@ -1,0 +1,206 @@
+{% extends "survey/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/generic_questions_styles.css' %}">
+    <script src="{% static 'js/generic_questions_script.js' %}"></script>
+{% endblock %}
+
+<!-- {% block progress_width %}50%{% endblock %} -->
+<!-- {% block current_step %}3{% endblock %} -->
+
+{% block content %}
+<div class="form-container">
+    <h1 class="page-title">General Questions</h1>
+
+    <div class="info-box">
+        This section covers overall perception about FBR's digital systems and their impact on professional practice.
+    </div>
+
+    {% if error %}
+    <div class="error-box" id="error-box" role="alert">
+        <div class="error-icon">⚠️</div>
+        <div class="error-message">{{ error }}</div>
+    </div>
+    {% endif %}
+
+    <form method="POST" id="genericQuestionsForm" novalidate>
+        {% csrf_token %}
+
+        <!-- Question G1 -->
+        <div class="question-card">
+            <div class="question-text">G1. How would you rate the user-friendliness of FBR's digital platforms used in your professional role?</div>
+            <div class="radio-group compact">
+                {% for value, label in g1_iris_rating_options %}
+                <div class="radio-item">
+                    <input type="radio" id="g1_{{ value }}" name="g1_iris_rating" value="{{ value }}" required
+                           {% if generic_answers.g1_iris_rating == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="g1_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="g1_iris_rating_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for G1.
+            </div>
+        </div>
+
+        <!-- Question G2 -->
+        <div class="question-card">
+            <div class="question-text">G2. In your experience, what are the most significant general limitations of FBR's digital platforms that hinder your professional efficiency? (Optional)</div>
+            <div class="form-group">
+                <textarea name="g2_platform_limitations" class="form-control" rows="4"
+                          placeholder="Please describe specific features or system-wide issues..."
+                          aria-describedby="g2_error_inline">{{ generic_answers.g2_platform_limitations|default:'' }}</textarea>
+            </div>
+        </div>
+
+        <!-- Question G3 -->
+        <div class="question-card">
+            <div class="question-text">G3. From your professional standpoint, does Pakistan's current taxation or customs system exhibit any significant systemic weaknesses?</div>
+            <div class="radio-group compact">
+                {% for value, label in g2_system_weaknesses_options %}
+                <div class="radio-item">
+                    <input type="radio" id="g3_{{ value }}" name="g2_system_weaknesses" value="{{ value }}" required
+                           {% if generic_answers.g2_system_weaknesses == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="g3_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="g3_system_weaknesses_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for G3.
+            </div>
+        </div>
+
+        <!-- Question G3a (Conditional) -->
+        <div class="question-card" id="g3a_section"
+             {% if generic_answers.g2_system_weaknesses != 'yes' %}style="display: none;"{% endif %}>
+            <div class="question-text">G3a. If yes, please describe the most critical systemic weaknesses you have observed.</div>
+            <div class="form-group">
+                <textarea name="g2a_weaknesses_details" class="form-control" rows="4"
+                          placeholder="Please describe systemic weaknesses related to policy, administration, legislation, or implementation..."
+                          aria-describedby="g3a_error_inline">{{ generic_answers.g2a_weaknesses_details|default:'' }}</textarea>
+                <div id="g3a_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                    ⚠️ Please provide details for system weaknesses in G3a.
+                </div>
+            </div>
+        </div>
+
+        <!-- Question G4 -->
+        <div class="question-card">
+            <div class="question-text">G4. Which stakeholder groups, in your opinion, face the greatest challenges in navigating tax/customs compliance? (Select all that apply)</div>
+            <div class="checkbox-group compact">
+                {% for value, label in challenged_groups %}
+                <div class="checkbox-item">
+                    <input type="checkbox" id="g4_{{ value }}" name="g4_challenged_groups" value="{{ value }}"
+                           {% if value in generic_answers.g4_challenged_groups %}checked{% endif %}
+                           onchange="toggleG4Other(this)">
+                    <label for="g4_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="g4_challenged_groups_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select at least one option for G4.
+            </div>
+            <div id="g4_other_specify" style="display: {% if 'others' in generic_answers.g4_challenged_groups %}block{% else %}none{% endif %}; margin-top: 15px;">
+                <label for="g4_other_text" class="form-label">Please specify other groups:</label>
+                <input type="text" id="g4_other_text" name="g4_other_text" class="form-control"
+                       value="{{ generic_answers.g4_other_text|default:'' }}"
+                       placeholder="Describe other groups facing challenges..."
+                       aria-describedby="g4_other_text_error_inline">
+                <div id="g4_other_text_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                    ⚠️ Please specify other groups.
+                </div>
+            </div>
+        </div>
+
+        <!-- Question G5 -->
+        <div class="question-card">
+            <div class="question-text">G5. How have recent changes in FBR's digital platforms affected the number of clients you serve?</div>
+            <div class="radio-group compact">
+                {% for value, label in g5_options %}
+                <div class="radio-item">
+                    <input type="radio" id="g5_{{ value }}" name="g5_clients_change" value="{{ value }}" required
+                           {% if generic_answers.g5_clients_change == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="g5_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="g5_clients_change_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for G5.
+            </div>
+        </div>
+
+        <!-- Question G6 -->
+        <div class="question-card">
+            <div class="question-text">G6. How have these digital changes affected your professional fee structure?</div>
+            <div class="radio-group compact">
+                {% for value, label in g6_options %}
+                <div class="radio-item">
+                    <input type="radio" id="g6_{{ value }}" name="g6_fee_change" value="{{ value }}" required
+                           {% if generic_answers.g6_fee_change == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="g6_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="g6_fee_change_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for G6.
+            </div>
+        </div>
+
+        <!-- Question G7 -->
+        <div class="question-card">
+            <div class="question-text">G7. To what extent do digital literacy and internet access issues affect your or your clients' ability to use FBR's platforms?</div>
+            <div class="radio-group compact">
+                {% for value, label in g7_options %}
+                <div class="radio-item">
+                    <input type="radio" id="g7_{{ value }}" name="g7_digital_literacy_impact" value="{{ value }}" required
+                           {% if generic_answers.g7_digital_literacy_impact == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="g7_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="g7_digital_literacy_impact_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for G7.
+            </div>
+        </div>
+
+        <!-- Question G8 -->
+        <div class="question-card">
+            <div class="question-text">G8. Are there regional differences in system performance?</div>
+            <div class="radio-group compact">
+                {% for value, label in g8_options %}
+                <div class="radio-item">
+                    <input type="radio" id="g8_{{ value }}" name="g8_regional_differences" value="{{ value }}" required
+                           {% if generic_answers.g8_regional_differences == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="g8_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="g8_regional_differences_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for G8.
+            </div>
+            <div id="g8_details" style="display: {% if generic_answers.g8_regional_differences in 'yes_significantly,yes_somewhat' %}block{% else %}none{% endif %}; margin-top: 15px;">
+                <label for="g8_regional_differences_text" class="form-label">If yes, please provide details:</label>
+                <textarea name="g8_regional_differences_text" class="form-control" rows="4"
+                          placeholder="Describe any regional differences in performance..."
+                          aria-describedby="g8_details_error_inline">{{ generic_answers.g8_regional_differences_text|default:'' }}</textarea>
+                <div id="g8_details_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                    ⚠️ Please provide details for regional differences in G8.
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Buttons -->
+        <div class="buttons">
+            <a href="{% url 'survey:respondent_info' %}" class="btn btn-back">← Back</a>
+            <button type="submit" class="btn btn-next">Next →</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

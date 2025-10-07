@@ -1,0 +1,77 @@
+<!-- survey/templates/survey/final_remarks.html -->
+{% extends "survey/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/final_remarks_styles.css' %}">
+    <script src="{% static 'js/final_remarks_script.js' %}"></script>
+{% endblock %}
+
+<!-- {% block progress_width %}50%{% endblock %} -->
+<!-- {% block current_step %}3{% endblock %} -->
+
+{% block content %}
+<h1 class="page-title">Final Remarks</h1>
+
+<div class="info-box">
+    Please provide any additional suggestions or remarks to improve FBR's taxation system.
+</div>
+
+{% if error %}
+<div class="error-box" id="error-box" role="alert">
+    <div class="error-icon">⚠️</div>
+    <div class="error-message">{{ error }}</div>
+</div>
+{% endif %}
+
+<form method="POST" id="finalForm"
+      data-save-url="{% url 'survey:final_remarks' %}"
+      data-confirmation-url="{% url 'survey:confirmation' %}"
+      data-back-url="{% url 'survey:cross_system_perspectives' %}">
+    {% csrf_token %}
+
+    <div class="section">
+        <h2 class="section-title">💡 Additional Suggestions</h2>
+
+        <div class="form-group">
+            <label for="final_remarks" class="form-label">Your suggestions or remarks:</label>
+            <textarea id="final_remarks" name="final_remarks" class="form-control" rows="6" required
+                      placeholder="Please share any additional feedback, suggestions, or concerns...">{{ request.session.final_remarks|default:'' }}</textarea>
+        </div>
+
+        <div class="info-box" style="background: #f3e5f5; border-left-color: #9c27b0;">
+            <strong>Note:</strong> Your feedback is invaluable for improving Pakistan's taxation system.
+            Please be specific and constructive in your suggestions.
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button type="button" class="btn btn-back" onclick="handleBackNavigation()">← Back</button>
+        <button type="button" class="btn btn-submit" onclick="confirmSubmission()">Submit Survey</button>
+    </div>
+</form>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+        <h3 id="modal-title" style="color: var(--fbr-blue); margin-bottom: 1rem;">Confirm Submission</h3>
+        <p>Are you sure you want to submit your survey? Once submitted, you cannot make changes.</p>
+
+        <div class="submission-summary">
+            <h4>Survey Sections Completed:</h4>
+            <ul>
+                <li>✅ Respondent Information</li>
+                <li>✅ General Questions</li>
+                <li>✅ Role-Specific Questions</li>
+                <li>{% if request.session.cross_system_answers and not request.session.cross_system_answers.skipped %}✅{% else %}⏭️{% endif %} Cross-System Perspectives</li>
+                <li>✅ Final Remarks</li>
+            </ul>
+        </div>
+
+        <div class="modal-buttons">
+            <button type="button" class="btn btn-back" onclick="reviewAnswers()">Review My Answers</button>
+            <button type="button" class="btn btn-submit" onclick="submitForm()">Yes, Submit Survey</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FBR Stakeholder Consultation 2025</title>
+    {% load static %}
+    {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/base_styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Federal Board of Revenue</h1>
+            <p>Stakeholder Consultation Survey 2025</p>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-percentage" id="progressPercentage">{{ progress_percentage|default:0 }}%</div>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar" data-width="{{ progress_width|default:'0%' }}" style="width: {{ progress_width|default:'0%' }}"></div>
+            </div>
+            <div class="progress-steps">
+                <div class="step {% if current_step >= 1 %}completed{% endif %} {% if current_step == 1 %}active{% endif %}" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Welcome</div>
+                </div>
+                <div class="step {% if current_step >= 2 %}completed{% endif %} {% if current_step == 2 %}active{% endif %}" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Respondent Info</div>
+                </div>
+                <div class="step {% if current_step >= 3 %}completed{% endif %} {% if current_step == 3 %}active{% endif %}" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Generic Qs</div>
+                </div>
+                <div class="step {% if current_step >= 4 %}completed{% endif %} {% if current_step == 4 %}active{% endif %}" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">Role Specific Qs</div>
+                </div>
+                <div class="step {% if current_step >= 5 %}completed{% endif %} {% if current_step == 5 %}active{% endif %}" data-step="5">
+                    <div class="step-circle">5</div>
+                    <div class="step-label">Cross System Qs</div>
+                </div>
+                <div class="step {% if current_step >= 6 %}completed{% endif %} {% if current_step == 6 %}active{% endif %}" data-step="6">
+                    <div class="step-circle">6</div>
+                    <div class="step-label">Final Remarks</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    <script>
+    // Pass Django context to JavaScript
+    window.djangoContext = {
+        currentStep: {{ current_step|default:1 }},
+        progressPercentage: {{ progress_percentage|default:0 }},
+        progressWidth: "{{ progress_width|default:'0%' }}",
+        totalSteps: {{ total_steps|default:6 }}
+    };
+    console.log('Django context for progress:', window.djangoContext);
+    </script>
+
+    <script src="{% static 'js/base_script.js' %}"></script>
+</body>
+</html>
