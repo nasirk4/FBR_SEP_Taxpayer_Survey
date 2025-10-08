@@ -3,7 +3,6 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from .models import SurveyResponse
-# Remove the admin_dashboard_view import since we're not using it in custom URLs anymore
 
 @admin.register(SurveyResponse)
 class SurveyResponseAdmin(admin.ModelAdmin):
@@ -33,20 +32,23 @@ class SurveyResponseAdmin(admin.ModelAdmin):
                 'lp3_improvement_areas', 'lp3_other_text',
                 'lp4_procedures', 'lp4_other_procedure', 'lp4_other_sales', 'lp4_other_income', 'lp4_other_comment',
                 'lp5_representation_challenges', 'lp5_other_text',
-                'lp6_filing_efficiency', 'lp7_case_tracking', 'lp8_notice_communication',
-                'lp9_law_accessibility', 'lp10_law_change_impact', 'lp11_adr_effectiveness',
-                'lp12_dispute_transparency', 'lp13_overall_satisfaction', 'lp13_feedback'
+                'lp6_filing_efficiency', 'lp6_qualitative_text', 'lp6_qualitative_visible',
+                'lp7_case_tracking', 'lp8_notice_communication', 'lp8_qualitative_text', 'lp8_qualitative_visible',
+                'lp9_law_accessibility', 'lp10_law_change_impact', 'lp10_qualitative_text', 'lp10_qualitative_visible',
+                'lp11_adr_effectiveness', 'lp12_dispute_transparency', 'lp13_overall_satisfaction', 'final_feedback'
             ),
             'classes': ('collapse',)
         }),
         ('Customs Agent Questions', {
             'fields': (
                 'ca1_training_received', 'ca1a_training_usefulness',
-                'ca2_psw_weboc_integration',
-                'ca3_procedure_challenges', 'ca3_other_text',
-                'ca4_duty_assessment', 'ca5_psw_vs_weboc',
-                'ca6_cargo_efficiency', 'ca7_system_reliability', 'ca8_policy_impact',
-                'ca9_operational_challenges', 'ca9_other_text', 'ca9_feedback'
+                'ca2_psw_weboc_integration', 'ca3_psw_comparison',
+                'ca4_procedure_challenges', 'ca4_other_text',
+                'ca5_duty_assessment', 'ca6_cargo_efficiency',
+                'ca7_document_verification', 'ca8_agency_coordination',
+                'ca9_system_reliability', 'ca10_policy_impact',
+                'ca11_client_representation', 'ca12_operational_challenges', 'ca12_other_text',
+                'ca13_biggest_challenge', 'ca13_other_text'
             ),
             'classes': ('collapse',)
         }),
@@ -137,19 +139,14 @@ class SurveyResponseAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         urls = super().get_urls()
-
-        # REMOVED: Custom dashboard URL - it's now available at /admin/dashboard/ via main urls.py
-        # The dashboard is already properly configured in survey/urls.py
         return urls
 
     def changelist_view(self, request, extra_context=None):
         # Add dashboard link to the change list page
         extra_context = extra_context or {}
         try:
-            # Use the main dashboard URL from survey.urls (survey namespace)
             dashboard_url = reverse('survey:admin_dashboard')
         except:
-            # Fallback to direct URL
             dashboard_url = '/admin/dashboard/'
 
         extra_context['dashboard_link'] = format_html(
@@ -210,13 +207,13 @@ class SurveyResponseAdmin(admin.ModelAdmin):
         return self.formatted_json_display(obj.get_lp5_representation_challenges_display())
     lp5_representation_challenges_display.short_description = "Representation Challenges"
 
-    def ca3_procedure_challenges_display(self, obj):
-        return self.formatted_json_display(obj.get_ca3_procedure_challenges_display())
-    ca3_procedure_challenges_display.short_description = "Procedure Challenges"
+    def ca4_procedure_challenges_display(self, obj):
+        return self.formatted_json_display(obj.get_ca4_procedure_challenges_display())
+    ca4_procedure_challenges_display.short_description = "Procedure Challenges"
 
-    def ca9_operational_challenges_display(self, obj):
-        return self.formatted_json_display(obj.get_ca9_operational_challenges_display())
-    ca9_operational_challenges_display.short_description = "Operational Challenges"
+    def ca12_operational_challenges_display(self, obj):
+        return self.formatted_json_display(obj.get_ca12_operational_challenges_display())
+    ca12_operational_challenges_display.short_description = "Operational Challenges"
 
     def cross_system_answers_display(self, obj):
         cross_data = obj.get_cross_system_data()

@@ -179,6 +179,45 @@
     outline: none;
 }
 
+/* Specific textarea styling for qualitative inputs */
+.form-control.textarea-qualitative {
+    min-height: 100px;
+    resize: vertical;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    line-height: 1.5;
+}
+
+/* Styling for qualitative sections */
+.lp6_qualitative_section,
+.lp8_qualitative_section,
+.lp10_qualitative_section {
+    border-left: 3px solid #28a745;
+    background-color: #f9fafb;
+    padding: 0.75rem;
+    margin: 1rem 0;
+    transition: opacity 0.3s ease, height 0.3s ease;
+    overflow: hidden;
+}
+
+.textarea-qualitative {
+    min-height: 100px;
+    resize: vertical;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    padding: 0.5rem;
+}
+
+/* Ensure hidden sections are not displayed */
+.lp6_qualitative_section[style*="display: none"],
+.lp8_qualitative_section[style*="display: none"],
+.lp10_qualitative_section[style*="display: none"] {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+}
+
 .form-group {
     margin-bottom: clamp(0.5rem, 1vw, 1.5rem);
 }
@@ -230,6 +269,18 @@
     .buttons {
         flex-direction: column;
         gap: clamp(0.375rem, 0.75vw, 0.5rem);
+    }
+
+    .form-control.textarea-qualitative,
+    .textarea-qualitative {
+        min-height: 80px;
+        font-size: 0.9rem;
+    }
+
+    .lp6_qualitative_section,
+    .lp8_qualitative_section,
+    .lp10_qualitative_section {
+        padding: 0.5rem;
     }
 }
 

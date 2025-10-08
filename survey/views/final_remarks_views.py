@@ -34,11 +34,11 @@ def final_remarks_view(request):
                     'timestamp': request.session['final_remarks_timestamp']
                 })
             except Exception as e:
-                logger.error(f"Error saving draft: {e}, session_id={request.session.session_key}")
+                logger.error(f"Error saving draft: {str(e)}, session_id={request.session.session_key}")
                 return JsonResponse({
                     'status': 'error',
                     'message': f"Error saving draft: {str(e)}"
-                }, status=500)
+                }, status=400)
 
         # Handle final submission
         if 'confirm_submit' in request.POST:
@@ -58,9 +58,8 @@ def final_remarks_view(request):
                 ])
             if professional_role in ['customs', 'both']:
                 required_role_fields.extend([
-                    'ca1_training_received', 'ca2_psw_weboc_integration', 'ca4_duty_assessment',
-                    'ca5_psw_vs_weboc', 'ca6_cargo_efficiency', 'ca7_system_reliability',
-                    'ca8_policy_impact'
+                    'ca1_training_received', 'ca2_psw_weboc_integration', 'ca5_duty_assessment',
+                    'ca6_cargo_efficiency', 'ca9_system_reliability', 'ca10_policy_impact'
                 ])
 
             # Check required fields
@@ -84,7 +83,26 @@ def final_remarks_view(request):
                 return render(request, 'survey/final_remarks.html', context)
 
             try:
-                # Create survey response with individual fields instead of JSON
+                # Map outdated session keys to current model fields
+                role_answers_mapped = role_answers.copy()
+                # Map old CA fields to new ones
+                field_mappings = {
+                    'ca3_procedure_challenges': 'ca4_procedure_challenges',
+                    'ca3_other_text': 'ca4_other_text',
+                    'ca4_duty_assessment': 'ca5_duty_assessment',
+                    'ca5_psw_vs_weboc': 'ca3_psw_comparison',
+                    'ca7_system_reliability': 'ca9_system_reliability',
+                    'ca8_policy_impact': 'ca10_policy_impact',
+                    'ca9_operational_challenges': 'ca12_operational_challenges',
+                    'ca9_other_text': 'ca12_other_text',
+                    'ca9_feedback': 'ca13_other_text',
+                    'lp13_feedback': 'final_feedback',  # Map lp13_feedback to final_feedback
+                }
+                for old_key, new_key in field_mappings.items():
+                    if old_key in role_answers_mapped:
+                        role_answers_mapped[new_key] = role_answers_mapped.pop(old_key)
+
+                # Create survey response
                 survey_response = SurveyResponse(
                     # Respondent Information
                     full_name=sanitize_input(respondent_info.get('full_name', '')),
@@ -109,43 +127,53 @@ def final_remarks_view(request):
                     g8_regional_differences=generic_answers.get('g8_regional_differences', ''),
                     g8_regional_differences_text=sanitize_input(generic_answers.get('g8_regional_differences_text', '')),
 
-                    # Legal Practitioner Questions (if applicable)
-                    lp1_technical_issues=role_answers.get('lp1_technical_issues', ''),
-                    lp2_common_problems=role_answers.get('lp2_common_problems', []),
-                    lp2_other_text=sanitize_input(role_answers.get('lp2_other_text', '')),
-                    lp3_improvement_areas=role_answers.get('lp3_improvement_areas', []),
-                    lp3_other_text=sanitize_input(role_answers.get('lp3_other_text', '')),
-                    lp4_procedures=role_answers.get('lp4_procedures', {}),
-                    lp4_other_procedure=role_answers.get('lp4_other_procedure', ''),
-                    lp4_other_sales=role_answers.get('lp4_other_sales', False),
-                    lp4_other_income=role_answers.get('lp4_other_income', False),
-                    lp4_other_comment=sanitize_input(role_answers.get('lp4_other_comment', '')),
-                    lp5_representation_challenges=role_answers.get('lp5_representation_challenges', []),
-                    lp5_other_text=sanitize_input(role_answers.get('lp5_other_text', '')),
-                    lp6_filing_efficiency=role_answers.get('lp6_filing_efficiency', ''),
-                    lp7_case_tracking=role_answers.get('lp7_case_tracking', ''),
-                    lp8_notice_communication=role_answers.get('lp8_notice_communication', ''),
-                    lp9_law_accessibility=role_answers.get('lp9_law_accessibility', ''),
-                    lp10_law_change_impact=role_answers.get('lp10_law_change_impact', ''),
-                    lp11_adr_effectiveness=role_answers.get('lp11_adr_effectiveness', ''),
-                    lp12_dispute_transparency=role_answers.get('lp12_dispute_transparency', ''),
-                    lp13_overall_satisfaction=role_answers.get('lp13_overall_satisfaction', ''),
-                    lp13_feedback=sanitize_input(role_answers.get('lp13_feedback', '')),
+                    # Legal Practitioner Questions
+                    lp1_technical_issues=role_answers_mapped.get('lp1_technical_issues', ''),
+                    lp2_common_problems=role_answers_mapped.get('lp2_common_problems', []),
+                    lp2_other_text=sanitize_input(role_answers_mapped.get('lp2_other_text', '')),
+                    lp3_improvement_areas=role_answers_mapped.get('lp3_improvement_areas', []),
+                    lp3_other_text=sanitize_input(role_answers_mapped.get('lp3_other_text', '')),
+                    lp4_procedures=role_answers_mapped.get('lp4_procedures', {}),
+                    lp4_other_procedure=role_answers_mapped.get('lp4_other_procedure', ''),
+                    lp4_other_sales=role_answers_mapped.get('lp4_other_sales', False),
+                    lp4_other_income=role_answers_mapped.get('lp4_other_income', False),
+                    lp4_other_comment=sanitize_input(role_answers_mapped.get('lp4_other_comment', '')),
+                    lp5_representation_challenges=role_answers_mapped.get('lp5_representation_challenges', []),
+                    lp5_other_text=sanitize_input(role_answers_mapped.get('lp5_other_text', '')),
+                    lp6_filing_efficiency=role_answers_mapped.get('lp6_filing_efficiency', ''),
+                    lp6_qualitative_text=sanitize_input(role_answers_mapped.get('lp6_qualitative_text', '')),
+                    lp6_qualitative_visible=role_answers_mapped.get('lp6_qualitative_visible', False),
+                    lp7_case_tracking=role_answers_mapped.get('lp7_case_tracking', ''),
+                    lp8_notice_communication=role_answers_mapped.get('lp8_notice_communication', ''),
+                    lp8_qualitative_text=sanitize_input(role_answers_mapped.get('lp8_qualitative_text', '')),
+                    lp8_qualitative_visible=role_answers_mapped.get('lp8_qualitative_visible', False),
+                    lp9_law_accessibility=role_answers_mapped.get('lp9_law_accessibility', ''),
+                    lp10_law_change_impact=role_answers_mapped.get('lp10_law_change_impact', ''),
+                    lp10_qualitative_text=sanitize_input(role_answers_mapped.get('lp10_qualitative_text', '')),
+                    lp10_qualitative_visible=role_answers_mapped.get('lp10_qualitative_visible', False),
+                    lp11_adr_effectiveness=role_answers_mapped.get('lp11_adr_effectiveness', ''),
+                    lp12_dispute_transparency=role_answers_mapped.get('lp12_dispute_transparency', ''),
+                    lp13_overall_satisfaction=role_answers_mapped.get('lp13_overall_satisfaction', ''),
+                    final_feedback=sanitize_input(role_answers_mapped.get('final_feedback', '')),
 
-                    # Customs Agent Questions (if applicable)
-                    ca1_training_received=role_answers.get('ca1_training_received', ''),
-                    ca1a_training_usefulness=role_answers.get('ca1a_training_usefulness', ''),
-                    ca2_psw_weboc_integration=role_answers.get('ca2_psw_weboc_integration', ''),
-                    ca3_procedure_challenges=role_answers.get('ca3_procedure_challenges', []),
-                    ca3_other_text=sanitize_input(role_answers.get('ca3_other_text', '')),
-                    ca4_duty_assessment=role_answers.get('ca4_duty_assessment', ''),
-                    ca5_psw_vs_weboc=role_answers.get('ca5_psw_vs_weboc', ''),
-                    ca6_cargo_efficiency=role_answers.get('ca6_cargo_efficiency', ''),
-                    ca7_system_reliability=role_answers.get('ca7_system_reliability', ''),
-                    ca8_policy_impact=role_answers.get('ca8_policy_impact', ''),
-                    ca9_operational_challenges=role_answers.get('ca9_operational_challenges', []),
-                    ca9_other_text=sanitize_input(role_answers.get('ca9_other_text', '')),
-                    ca9_feedback=sanitize_input(role_answers.get('ca9_feedback', '')),
+                    # Customs Agent Questions
+                    ca1_training_received=role_answers_mapped.get('ca1_training_received', ''),
+                    ca1a_training_usefulness=role_answers_mapped.get('ca1a_training_usefulness', ''),
+                    ca2_psw_weboc_integration=role_answers_mapped.get('ca2_psw_weboc_integration', ''),
+                    ca3_psw_comparison=role_answers_mapped.get('ca3_psw_comparison', ''),
+                    ca4_procedure_challenges=role_answers_mapped.get('ca4_procedure_challenges', []),
+                    ca4_other_text=sanitize_input(role_answers_mapped.get('ca4_other_text', '')),
+                    ca5_duty_assessment=role_answers_mapped.get('ca5_duty_assessment', ''),
+                    ca6_cargo_efficiency=role_answers_mapped.get('ca6_cargo_efficiency', ''),
+                    ca7_document_verification=role_answers_mapped.get('ca7_document_verification', ''),
+                    ca8_agency_coordination=role_answers_mapped.get('ca8_agency_coordination', ''),
+                    ca9_system_reliability=role_answers_mapped.get('ca9_system_reliability', ''),
+                    ca10_policy_impact=role_answers_mapped.get('ca10_policy_impact', ''),
+                    ca11_client_representation=role_answers_mapped.get('ca11_client_representation', ''),
+                    ca12_operational_challenges=role_answers_mapped.get('ca12_operational_challenges', []),
+                    ca12_other_text=sanitize_input(role_answers_mapped.get('ca12_other_text', '')),
+                    ca13_biggest_challenge=role_answers_mapped.get('ca13_biggest_challenge', ''),
+                    ca13_other_text=sanitize_input(role_answers_mapped.get('ca13_other_text', '')),
 
                     # Cross-System Perspectives
                     cross_system_answers=cross_system_answers,
@@ -157,23 +185,27 @@ def final_remarks_view(request):
                 survey_response.save()
                 request.session['reference_number'] = survey_response.reference_number
 
-                # Clear session data except reference number
+                # Clear session data except reference_number
                 for key in list(request.session.keys()):
                     if key != 'reference_number':
                         del request.session[key]
 
                 logger.info(f"Survey submitted successfully, reference_number={survey_response.reference_number}, session_id={request.session.session_key}")
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'status': 'success', 'message': 'Survey submitted successfully'})
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Survey submitted successfully',
+                        'redirect_url': '/confirmation/'
+                    })
                 return redirect('survey:confirmation')
 
             except Exception as e:
-                logger.error(f"Error saving survey: {e}, session_id={request.session.session_key}")
+                logger.error(f"Error saving survey: {str(e)}, session_id={request.session.session_key}")
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({
                         'status': 'error',
                         'message': f"Error submitting survey: {str(e)}"
-                    }, status=500)
+                    }, status=400)
                 context = get_progress_context(current_step=6)
                 context['error'] = "Error submitting survey. Please try again or contact support."
                 context['final_remarks'] = final_remarks

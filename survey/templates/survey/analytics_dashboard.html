@@ -65,7 +65,6 @@
             <div class="value" data-stat="total">{{ summary_stats.total_responses|default:0 }}</div>
             <div class="sub-value">Target: {{ summary_stats.total_target|default:60 }}</div>
         </div>
-        <!-- ... rest of stat cards unchanged ... -->
         <div class="stat-card {% if quota_status.total.percentage >= 100 %}quota-completed{% elif quota_status.total.percentage >= 50 %}quota-inprogress{% else %}quota-low{% endif %}" role="region" aria-labelledby="overall-progress">
             <h3 id="overall-progress">Overall Progress</h3>
             <div class="value" data-stat="progress">{{ quota_status.total.percentage|default:0 }}%</div>
@@ -190,7 +189,7 @@
         </div>
         {% for section, insights in qualitative_insights.items %}
         <div class="qualitative-section" data-section="{{ section }}">
-            <h3 tabindex="0" aria-expanded="true" aria-controls="qualitative-{{ section }}">{{ section|title }}</h3>
+            <h3 tabindex="0" aria-expanded="true" aria-controls="qualitative-{{ section }}">{{ section|title|capfirst }}</h3>
             <div class="qualitative-box visible" id="qualitative-{{ section }}">
                 {% if insights %}
                     {% for insight in insights %}

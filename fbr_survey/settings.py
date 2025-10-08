@@ -13,9 +13,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Ensure log directory exists
 LOG_DIR = BASE_DIR / 'logs'
 LOG_FILE = LOG_DIR / 'fbr_survey.log'
-os.makedirs(LOG_DIR, exist_ok=True)  # Create logs/ directory if it doesn't exist
+os.makedirs(LOG_DIR, exist_ok=True)
 if not LOG_FILE.exists():
-    LOG_FILE.touch()  # Create empty log file if it doesn't exist
+    LOG_FILE.touch()
 
 # Security settings
 def get_env_variable(var_name, default=None):
@@ -30,6 +30,16 @@ def get_env_variable(var_name, default=None):
 SECRET_KEY = get_env_variable('DJANGO_SECRET_KEY')
 DEBUG = get_env_variable('DJANGO_DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = get_env_variable('DJANGO_ALLOWED_HOSTS', 'nasirk4.pythonanywhere.com,localhost,127.0.0.1').split(',')
+
+# Explicitly define CSRF_TRUSTED_ORIGINS
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'https://localhost:8000',
+    'http://cautious-eureka-jjq99jx6655hqj9j-8000.app.github.dev',
+    'https://cautious-eureka-jjq99jx6655hqj9j-8000.app.github.dev',
+    'https://*.github.dev',
+    'https://nasirk4.pythonanywhere.com',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -81,14 +91,14 @@ DATABASES = {
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Karachi'  # PKT (UTC+5)
+TIME_ZONE = 'Asia/Karachi'
 USE_I18N = True
 USE_TZ = True
 
 # Static files
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = '/home/nasirk4/staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Session settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -98,7 +108,6 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = not DEBUG
 
 # CSRF settings
 CSRF_COOKIE_SECURE = not DEBUG
-CSRF_TRUSTED_ORIGINS = [f'https://{host}' for host in ALLOWED_HOSTS] + [f'http://{host}' for host in ALLOWED_HOSTS]
 
 # Security settings
 SECURE_SSL_REDIRECT = not DEBUG
@@ -126,7 +135,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': LOG_FILE,  # Use resolved path
+            'filename': LOG_FILE,
             'formatter': 'verbose',
         },
         'console': {

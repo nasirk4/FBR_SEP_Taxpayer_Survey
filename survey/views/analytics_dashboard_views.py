@@ -12,7 +12,7 @@ import tempfile
 
 logger = logging.getLogger(__name__)
 
-# Import your analytics class (adjust import path as needed)
+# Import your analytics class
 from survey.admin_dashboard import SurveyAnalytics
 
 def debug_admin_urls_view(request):
@@ -58,7 +58,7 @@ def get_analytics_data(analytics):
         if not analytics.load_data():
             raise ValueError("Failed to load survey data from database")
 
-        return {
+        data = {
             'summary_stats': analytics.get_summary_stats() or {},
             'quota_status': analytics.get_quota_status() or {},
             'generic_analysis': analytics.get_generic_questions_analysis() or {},
@@ -72,13 +72,15 @@ def get_analytics_data(analytics):
                 **(analytics.create_cross_tab_charts() or {})
             }
         }
+        logger.debug(f"Qualitative insights sections: {list(data['qualitative_insights'].keys())}")
+        return data
     except (DatabaseError, ValueError) as e:
         logger.error(f"Error preparing analytics data: {e}")
         return {}
 
 @staff_member_required
 @csrf_protect
-def admin_dashboard_view(request):  # CHANGED: Added '_view'
+def admin_dashboard_view(request):
     """Render the admin dashboard with survey analytics and visualizations.
 
     Args:
@@ -98,12 +100,13 @@ def admin_dashboard_view(request):  # CHANGED: Added '_view'
         context = {
             'title': 'Survey Analytics Dashboard',
             'total_responses': data['summary_stats'].get('total_responses', 0),
+            'total_target': data['quota_status'].get('total', {}).get('target', 60),
             **data
         }
-        return render(request, 'survey/analytics_dashboard.html', context)
+        return render(request, 'survey/analytics_dashboard.html', context)  # Updated template name
 
     except Exception as e:
-        logger.error(f"Dashboard error: {e}")
+        logger.error(f"Dashboard error: {str(e)}", exc_info=True)
         messages.error(request, f"Error loading dashboard: {str(e)}")
         return redirect('admin:index')
 

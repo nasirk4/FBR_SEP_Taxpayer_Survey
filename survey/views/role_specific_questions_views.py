@@ -96,7 +96,7 @@ def get_role_specific_context(professional_role):
                 ('very_effective', 'Very effective'),
                 ('effective', 'Effective'),
                 ('moderately_effective', 'Moderately effective'),
-                ('inefficient', 'Inefficient'),
+                ('inefficient', 'Ineffective'),
                 ('very_inefficient', 'Very inefficient'),
             ],
             'lp12_options': [
@@ -128,11 +128,12 @@ def get_role_specific_context(professional_role):
 
     if professional_role in ['customs', 'both']:
         context.update({
+            # CA1: Training
             'ca1_options': [
-                ('both_training', 'Yes, for both WeBOC and PSW'),
-                ('weboc_only', 'Yes, for WeBOC only'),
-                ('psw_only', 'Yes, for PSW only'),
-                ('no_training', 'No'),
+                ('both_training', 'Yes - for both WeBOC and PSW'),
+                ('weboc_only', 'Yes - only for WeBOC'),
+                ('psw_only', 'Yes - only for PSW'),
+                ('no_training', 'No training received'),
             ],
             'ca1a_options': [
                 ('very_useful', 'Very useful'),
@@ -142,83 +143,118 @@ def get_role_specific_context(professional_role):
                 ('not_at_all_useful', 'Not at all useful'),
             ],
             'ca2_options': [
-                ('very_well_integrated', 'Very well integrated'),
-                ('well_integrated', 'Well integrated'),
-                ('moderately_integrated', 'Moderately integrated'),
-                ('poorly_integrated', 'Poorly integrated'),
-                ('not_integrated', 'Not integrated'),
+                ('very_well_integrated', 'Very well integrated - seamless data flow'),
+                ('well_integrated', 'Well integrated - minor gaps'),
+                ('moderately_integrated', 'Moderately integrated - some duplication/delays'),
+                ('poorly_integrated', 'Poorly integrated - frequent disruptions'),
+                ('not_integrated', 'Not integrated - systems operate independently'),
             ],
             'ca3_options': [
+                ('psw_significantly_better', 'PSW is significantly more efficient'),
+                ('psw_moderately_better', 'PSW is moderately better but evolving'),
+                ('comparable', 'Both systems have comparable strengths'),
+                ('weboc_reliable', 'WeBOC remains more reliable for core processes'),
+                ('not_sure', 'Not sure/No direct PSW experience'),
+            ],
+            'ca4_options': [
                 ('goods_declaration', 'Goods declaration filing'),
                 ('classification', 'Classification under PCT codes'),
                 ('customs_valuation', 'Customs valuation of goods'),
                 ('duty_calculation', 'Duty and tax calculation'),
-                ('document_verification', 'Document verification and submission'),
-                ('cargo_examination', 'Cargo examination and release coordination'),
-                ('refund_processing', 'Refund or drawback processing'),
+                ('document_submission', 'Document submission and verification'),
+                ('cargo_examination', 'Cargo examination coordination'),
+                ('client_registration', 'Client registration/management'),
+                ('refund_processing', 'Refund/drawback processing'),
                 ('no_challenges', 'No significant challenges'),
                 ('other', 'Other (please specify)'),
             ],
-            'ca4_options': [
+            'ca5_options': [
                 ('highly_transparent', 'Highly transparent and predictable'),
-                ('mostly_transparent', 'Mostly transparent and predictable'),
-                ('somewhat_transparent', 'Somewhat transparent but unpredictable'),
-                ('often_opaque', 'Often opaque and unpredictable'),
+                ('mostly_transparent', 'Mostly transparent with minor issues'),
+                ('somewhat_transparent', 'Somewhat transparent but inconsistent'),
+                ('often_unpredictable', 'Often unpredictable'),
                 ('completely_unpredictable', 'Completely unpredictable'),
             ],
-            'ca5_options': [
-                ('psw_significantly_better', 'PSW is significantly more efficient'),
-                ('psw_moderately_better', 'PSW is moderately better'),
-                ('comparable', 'Both systems have comparable strengths and weaknesses'),
-                ('weboc_reliable', 'WeBOC is currently more reliable'),
-                ('not_sure', 'Not sure / Not enough experience with PSW'),
-            ],
             'ca6_options': [
-                ('very_efficient', 'Very efficient'),
-                ('efficient', 'Efficient'),
-                ('moderately_efficient', 'Moderately efficient'),
-                ('inefficient', 'Inefficient'),
-                ('very_inefficient', 'Very inefficient'),
+                ('very_efficient', 'Very efficient - minimal delays'),
+                ('efficient', 'Efficient - acceptable timelines'),
+                ('moderately_efficient', 'Moderate - occasional delays'),
+                ('inefficient', 'Inefficient - frequent delays'),
+                ('very_inefficient', 'Very inefficient - major bottlenecks'),
             ],
             'ca7_options': [
-                ('very_reliable', 'Very reliable'),
-                ('reliable', 'Reliable'),
-                ('moderately_reliable', 'Moderately reliable'),
-                ('unreliable', 'Unreliable'),
-                ('very_unreliable', 'Very unreliable'),
+                ('very_efficient', 'Very efficient - quick verification'),
+                ('efficient', 'Efficient - reasonable timelines'),
+                ('moderately_efficient', 'Moderate - some delays'),
+                ('inefficient', 'Inefficient - frequent verification delays'),
+                ('very_inefficient', 'Very inefficient - major document processing issues'),
             ],
             'ca8_options': [
-                ('significant_negative', 'Significant negative impact'),
-                ('moderate_negative', 'Moderate negative impact'),
-                ('minor_impact', 'Minor impact'),
-                ('no_impact', 'No impact'),
-                ('positive_impact', 'Positive impact'),
+                ('very_effective', 'Very effective - seamless multi-agency processing'),
+                ('effective', 'Effective - minor coordination issues'),
+                ('moderately_effective', 'Moderate - some coordination challenges'),
+                ('ineffective', 'Ineffective - frequent coordination problems'),
+                ('very_ineffective', 'Very ineffective - major inter-agency bottlenecks'),
             ],
             'ca9_options': [
-                ('system_reliability', 'System reliability and downtime'),
-                ('policy_changes', 'Frequent policy and procedure changes'),
+                ('very_reliable', 'Very reliable - minimal downtime'),
+                ('reliable', 'Reliable - occasional slowdowns'),
+                ('moderately_reliable', 'Moderate - frequent performance issues'),
+                ('unreliable', 'Unreliable - regular system crashes'),
+                ('very_unreliable', 'Very unreliable - unusable during peaks'),
+            ],
+            'ca10_options': [
+                ('significant_negative', 'Significant negative impact - major operational disruptions'),
+                ('moderate_negative', 'Moderate negative impact - manageable but challenging'),
+                ('minor_impact', 'Minor impact - easily adaptable'),
+                ('no_impact', 'No significant impact'),
+                ('positive_impact', 'Positive impact - improvements in processes'),
+            ],
+            'ca11_options': [
+                ('very_effective', 'Very effective - can fully represent client interests'),
+                ('effective', 'Effective - minor representation limitations'),
+                ('moderately_effective', 'Moderate - some representation challenges'),
+                ('ineffective', 'Ineffective - significant representation barriers'),
+                ('very_ineffective', 'Very ineffective - cannot adequately represent clients'),
+            ],
+            'ca12_options': [
+                ('system_reliability', 'System reliability and uptime'),
+                ('frequent_policy_changes', 'Frequent policy changes'),
                 ('unpredictable_assessments', 'Unpredictable duty assessments'),
-                ('cargo_delays', 'Cargo examination and release delays'),
-                ('document_bottlenecks', 'Document processing bottlenecks'),
-                ('client_management', 'Client management and communication'),
+                ('cargo_examination_delays', 'Cargo examination delays'),
+                ('document_processing_bottlenecks', 'Document processing bottlenecks'),
+                ('client_management_challenges', 'Client management challenges'),
                 ('inter_agency_coordination', 'Inter-agency coordination'),
-                ('lack_training', 'Lack of adequate training'),
+                ('training_knowledge_gaps', 'Training and knowledge gaps'),
                 ('other', 'Other (please specify)'),
+            ],
+            'ca13_options': [
+                ('system_reliability', 'System reliability and uptime'),
+                ('frequent_policy_changes', 'Frequent policy changes'),
+                ('unpredictable_assessments', 'Unpredictable duty assessments'),
+                ('cargo_examination_delays', 'Cargo examination delays'),
+                ('document_processing_bottlenecks', 'Document processing bottlenecks'),
+                ('client_management_challenges', 'Client management challenges'),
+                ('inter_agency_coordination', 'Inter-agency coordination'),
+                ('training_knowledge_gaps', 'Training and knowledge gaps'),
+                ('other', 'Other'),
             ],
             'valid_options': {
                 'ca1_training_received': ['both_training', 'weboc_only', 'psw_only', 'no_training'],
                 'ca1a_training_usefulness': ['very_useful', 'moderately_useful', 'slightly_useful', 'not_useful', 'not_at_all_useful'],
                 'ca2_psw_weboc_integration': ['very_well_integrated', 'well_integrated', 'moderately_integrated', 'poorly_integrated', 'not_integrated'],
-                'ca4_duty_assessment': ['highly_transparent', 'mostly_transparent', 'somewhat_transparent', 'often_opaque', 'completely_unpredictable'],
-                'ca5_psw_vs_weboc': ['psw_significantly_better', 'psw_moderately_better', 'comparable', 'weboc_reliable', 'not_sure'],
+                'ca3_psw_comparison': ['psw_significantly_better', 'psw_moderately_better', 'comparable', 'weboc_reliable', 'not_sure'],
+                'ca5_duty_assessment': ['highly_transparent', 'mostly_transparent', 'somewhat_transparent', 'often_unpredictable', 'completely_unpredictable'],
                 'ca6_cargo_efficiency': ['very_efficient', 'efficient', 'moderately_efficient', 'inefficient', 'very_inefficient'],
-                'ca7_system_reliability': ['very_reliable', 'reliable', 'moderately_reliable', 'unreliable', 'very_unreliable'],
-                'ca8_policy_impact': ['significant_negative', 'moderate_negative', 'minor_impact', 'no_impact', 'positive_impact'],
+                'ca7_document_verification': ['very_efficient', 'efficient', 'moderately_efficient', 'inefficient', 'very_inefficient'],
+                'ca8_agency_coordination': ['very_effective', 'effective', 'moderately_effective', 'ineffective', 'very_ineffective'],
+                'ca9_system_reliability': ['very_reliable', 'reliable', 'moderately_reliable', 'unreliable', 'very_unreliable'],
+                'ca10_policy_impact': ['significant_negative', 'moderate_negative', 'minor_impact', 'no_impact', 'positive_impact'],
+                'ca11_client_representation': ['very_effective', 'effective', 'moderately_effective', 'ineffective', 'very_ineffective'],
+                'ca13_biggest_challenge': ['system_reliability', 'frequent_policy_changes', 'unpredictable_assessments', 'cargo_examination_delays', 'document_processing_bottlenecks', 'client_management_challenges', 'inter_agency_coordination', 'training_knowledge_gaps', 'other'],
             }
         })
-
     return context
-
 
 def role_specific_questions_view(request):
     """Render the role-specific questions page (step 4)"""
@@ -227,7 +263,7 @@ def role_specific_questions_view(request):
 
     respondent_info = request.session.get('respondent_info', {})
 
-    # FIX: Get professional roles as list and determine role type
+    # Determine professional role based on respondent_info
     professional_roles = respondent_info.get('professional_roles', [])
     if 'legal' in professional_roles and 'customs' in professional_roles:
         professional_role = 'both'
@@ -263,11 +299,11 @@ def role_specific_questions_view(request):
                 value = request.POST.get(field, '').strip()
                 if not value:
                     errors.append(f"Missing required field: {field.replace('_', ' ').title()} (LP{field[2]})")
-                # FIX: Only validate against valid_options if the field exists
                 elif field in context_data.get('valid_options', {}) and value not in context_data['valid_options'][field]:
                     errors.append(f"Invalid value for {field.replace('_', ' ').title()} (LP{field[2]})")
                 role_answers[field] = value
 
+            # LP1 and LP2: Technical issues and common problems
             lp1_value = request.POST.get('lp1_technical_issues', '')
             lp2_problems = request.POST.getlist('lp2_common_problems', [])
             lp2_required = lp1_value in ['very_frequently', 'frequently']
@@ -278,6 +314,7 @@ def role_specific_questions_view(request):
             role_answers['lp2_common_problems'] = lp2_problems
             role_answers['lp2_other_text'] = sanitize_input(request.POST.get('lp2_other_text', ''))
 
+            # LP3: Improvement areas
             lp3_improvements = request.POST.getlist('lp3_improvement_areas', [])
             if not lp3_improvements:
                 errors.append("Please select at least one improvement area for LP3")
@@ -288,6 +325,7 @@ def role_specific_questions_view(request):
             role_answers['lp3_improvement_areas'] = lp3_improvements
             role_answers['lp3_other_text'] = sanitize_input(request.POST.get('lp3_other_text', ''))
 
+            # LP4: Procedures matrix
             lp4_procedures = ['registration', 'return_filing', 'refund_claims', 'audit_compliance', 'appeals', 'correspondence']
             lp4_data = {'sales': [], 'income': [], 'comments': {}}
             lp4_has_selection = False
@@ -316,6 +354,7 @@ def role_specific_questions_view(request):
             if not lp4_has_selection:
                 errors.append("Please select at least one procedure or tax type in LP4")
 
+            # LP5: Representation challenges
             lp5_challenges = request.POST.getlist('lp5_representation_challenges', [])
             if not lp5_challenges:
                 errors.append("Please select at least one challenge for LP5")
@@ -326,23 +365,50 @@ def role_specific_questions_view(request):
             role_answers['lp5_representation_challenges'] = lp5_challenges
             role_answers['lp5_other_text'] = sanitize_input(request.POST.get('lp5_other_text', ''))
 
-            role_answers['lp13_feedback'] = sanitize_input(request.POST.get('lp13_feedback', ''))
+            # LP6: Qualitative validation
+            lp6_visible = request.POST.get('lp6_qualitative_visible', '0') == '1'
+            lp6_text = request.POST.get('lp6_qualitative_text', '').strip()
+            if lp6_visible and not lp6_text:
+                errors.append("Please provide details for the filing challenges in LP6")
+            role_answers['lp6_qualitative_text'] = sanitize_input(lp6_text)
+            role_answers['lp6_qualitative_visible'] = lp6_visible
+
+            # LP8: Qualitative validation
+            lp8_visible = request.POST.get('lp8_qualitative_visible', '0') == '1'
+            lp8_text = request.POST.get('lp8_qualitative_text', '').strip()
+            if lp8_visible and not lp8_text:
+                errors.append("Please provide details for the communication challenges in LP8")
+            role_answers['lp8_qualitative_text'] = sanitize_input(lp8_text)
+            role_answers['lp8_qualitative_visible'] = lp8_visible
+
+            # LP10: Qualitative validation
+            lp10_visible = request.POST.get('lp10_qualitative_visible', '0') == '1'
+            lp10_text = request.POST.get('lp10_qualitative_text', '').strip()
+            if lp10_visible and not lp10_text:
+                errors.append("Please provide details for the impact of tax law changes in LP10")
+            role_answers['lp10_qualitative_text'] = sanitize_input(lp10_text)
+            role_answers['lp10_qualitative_visible'] = lp10_visible
+
+            # Final Feedback (optional)
+            role_answers['final_feedback'] = sanitize_input(request.POST.get('final_feedback', ''))
 
         if professional_role in ['customs', 'both']:
+            # Required radio fields
             required_customs_fields = [
-                'ca1_training_received', 'ca2_psw_weboc_integration', 'ca4_duty_assessment',
-                'ca5_psw_vs_weboc', 'ca6_cargo_efficiency', 'ca7_system_reliability',
-                'ca8_policy_impact'
+                'ca1_training_received', 'ca2_psw_weboc_integration', 'ca3_psw_comparison',
+                'ca5_duty_assessment', 'ca6_cargo_efficiency', 'ca7_document_verification',
+                'ca8_agency_coordination', 'ca9_system_reliability', 'ca10_policy_impact',
+                'ca11_client_representation', 'ca13_biggest_challenge'
             ]
             for field in required_customs_fields:
                 value = request.POST.get(field, '').strip()
                 if not value:
-                    errors.append(f"Missing required field: {field.replace('_', ' ').title()} (CA{field[2]})")
-                # FIX: Only validate against valid_options if the field exists
+                    errors.append(f"Missing required field: {field.replace('_', ' ').title()} (CA{field[2] if field[2].isdigit() else field[2:4]})")
                 elif field in context_data.get('valid_options', {}) and value not in context_data['valid_options'][field]:
-                    errors.append(f"Invalid value for {field.replace('_', ' ').title()} (CA{field[2]})")
+                    errors.append(f"Invalid value for {field.replace('_', ' ').title()} (CA{field[2] if field[2].isdigit() else field[2:4]})")
                 role_answers[field] = value
 
+            # CA1a: Conditional validation
             ca1_training = request.POST.get('ca1_training_received', '')
             ca1a_visible = request.POST.get('ca1a_visible', '0') == '1'
             ca1a_value = request.POST.get('ca1a_training_usefulness', '').strip()
@@ -352,26 +418,35 @@ def role_specific_questions_view(request):
                 errors.append("Invalid value for CA1a")
             role_answers['ca1a_training_usefulness'] = ca1a_value if ca1_training != 'no_training' else ''
 
-            ca3_challenges = request.POST.getlist('ca3_procedure_challenges', [])
-            if not ca3_challenges:
-                errors.append("Please select at least one option for CA3")
-            elif 'no_challenges' in ca3_challenges and len(ca3_challenges) > 1:
-                errors.append("Cannot select 'No significant challenges' with other options in CA3")
-            elif len(ca3_challenges) > 3 and 'no_challenges' not in ca3_challenges:
-                errors.append("Please select no more than 3 options for CA3")
-            if 'other' in ca3_challenges and not request.POST.get('ca3_other_text', '').strip():
-                errors.append("Please specify details for 'Other' in CA3")
-            role_answers['ca3_procedure_challenges'] = ca3_challenges
-            role_answers['ca3_other_text'] = sanitize_input(request.POST.get('ca3_other_text', ''))
+            # CA4: Procedure challenges (multiple selection)
+            ca4_challenges = request.POST.getlist('ca4_procedure_challenges', [])
+            if not ca4_challenges:
+                errors.append("Please select at least one option for CA4")
+            elif 'no_challenges' in ca4_challenges and len(ca4_challenges) > 1:
+                errors.append("Cannot select 'No significant challenges' with other options in CA4")
+            elif len(ca4_challenges) > 3 and 'no_challenges' not in ca4_challenges:
+                errors.append("Please select no more than 3 options for CA4")
+            if 'other' in ca4_challenges and not request.POST.get('ca4_other_text', '').strip():
+                errors.append("Please specify details for 'Other' in CA4")
+            role_answers['ca4_procedure_challenges'] = ca4_challenges
+            role_answers['ca4_other_text'] = sanitize_input(request.POST.get('ca4_other_text', ''))
 
-            ca9_challenges = request.POST.getlist('ca9_operational_challenges', [])
-            if not ca9_challenges:
-                errors.append("Please select at least one operational challenge for CA9")
-            if 'other' in ca9_challenges and not request.POST.get('ca9_other_text', '').strip():
-                errors.append("Please specify details for 'Other' in CA9")
-            role_answers['ca9_operational_challenges'] = ca9_challenges
-            role_answers['ca9_other_text'] = sanitize_input(request.POST.get('ca9_other_text', ''))
-            role_answers['ca9_feedback'] = sanitize_input(request.POST.get('ca9_feedback', ''))
+            # CA12: Operational challenges (multiple selection)
+            ca12_challenges = request.POST.getlist('ca12_operational_challenges', [])
+            if not ca12_challenges:
+                errors.append("Please select at least one operational challenge for CA12")
+            if 'other' in ca12_challenges and not request.POST.get('ca12_other_text', '').strip():
+                errors.append("Please specify details for 'Other' in CA12")
+            role_answers['ca12_operational_challenges'] = ca12_challenges
+            role_answers['ca12_other_text'] = sanitize_input(request.POST.get('ca12_other_text', ''))
+
+            # CA13: Biggest challenge (single selection with optional textarea)
+            ca13_biggest_challenge = request.POST.get('ca13_biggest_challenge', '').strip()
+            ca13_other_text = request.POST.get('ca13_other_text', '').strip()
+            if ca13_biggest_challenge == 'other' and not ca13_other_text:
+                errors.append("Please specify details for 'Other' in CA13")
+            role_answers['ca13_biggest_challenge'] = ca13_biggest_challenge
+            role_answers['ca13_other_text'] = sanitize_input(ca13_other_text)
 
         if errors:
             logger.warning(f"Validation errors in role_specific_questions: {errors}")

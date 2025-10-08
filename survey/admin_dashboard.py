@@ -41,13 +41,17 @@ class SurveyAnalytics:
                 lp3_improvement_areas, lp3_other_text, lp4_procedures, lp4_other_procedure,
                 lp4_other_sales, lp4_other_income, lp4_other_comment,
                 lp5_representation_challenges, lp5_other_text, lp6_filing_efficiency,
-                lp7_case_tracking, lp8_notice_communication, lp9_law_accessibility,
-                lp10_law_change_impact, lp11_adr_effectiveness, lp12_dispute_transparency,
-                lp13_overall_satisfaction, lp13_feedback,
+                lp6_qualitative_text, lp6_qualitative_visible, lp7_case_tracking,
+                lp8_notice_communication, lp8_qualitative_text, lp8_qualitative_visible,
+                lp9_law_accessibility, lp10_law_change_impact, lp10_qualitative_text,
+                lp10_qualitative_visible, lp11_adr_effectiveness, lp12_dispute_transparency,
+                lp13_overall_satisfaction, final_feedback,
                 ca1_training_received, ca1a_training_usefulness, ca2_psw_weboc_integration,
-                ca3_procedure_challenges, ca3_other_text, ca4_duty_assessment, ca5_psw_vs_weboc,
-                ca6_cargo_efficiency, ca7_system_reliability, ca8_policy_impact,
-                ca9_operational_challenges, ca9_other_text, ca9_feedback,
+                ca3_psw_comparison, ca4_procedure_challenges, ca4_other_text,
+                ca5_duty_assessment, ca6_cargo_efficiency, ca7_document_verification,
+                ca8_agency_coordination, ca9_system_reliability, ca10_policy_impact,
+                ca11_client_representation, ca12_operational_challenges, ca12_other_text,
+                ca13_biggest_challenge, ca13_other_text,
                 cross_system_answers, final_remarks, submission_date, reference_number
             FROM survey_surveyresponse
             ORDER BY submission_date DESC
@@ -60,9 +64,11 @@ class SurveyAnalytics:
             self.df = pd.DataFrame(data, columns=columns)
 
             # Parse JSON fields
-            json_columns = ['g4_challenged_groups', 'lp2_common_problems', 'lp3_improvement_areas',
-                           'lp4_procedures', 'lp5_representation_challenges', 'ca3_procedure_challenges',
-                           'ca9_operational_challenges', 'cross_system_answers']
+            json_columns = [
+                'g4_challenged_groups', 'lp2_common_problems', 'lp3_improvement_areas',
+                'lp4_procedures', 'lp5_representation_challenges', 'ca4_procedure_challenges',
+                'ca12_operational_challenges', 'cross_system_answers'
+            ]
 
             for col in json_columns:
                 if col in self.df.columns and self.df[col].notna().any():
@@ -131,11 +137,11 @@ class SurveyAnalytics:
         role_distribution = self.df['professional_role'].value_counts().to_dict()
         province_distribution = self.df['province'].value_counts().to_dict()
         district_distribution = self.df['district'].value_counts().head(10).to_dict()
-        
+
         # Convert datetime to string for JSON serialization
         latest_submission = self.df['submission_date'].max() if 'submission_date' in self.df.columns else "N/A"
         earliest_submission = self.df['submission_date'].min() if 'submission_date' in self.df.columns else "N/A"
-        
+
         if isinstance(latest_submission, pd.Timestamp):
             latest_submission = latest_submission.strftime('%Y-%m-%d %H:%M:%S')
         if isinstance(earliest_submission, pd.Timestamp):
@@ -163,7 +169,7 @@ class SurveyAnalytics:
         last_7_days = datetime.now() - timedelta(days=7)
         recent_df = self.df[self.df['submission_date'] >= last_7_days]
         timeline = recent_df.groupby(recent_df['submission_date'].dt.date).size()
-        
+
         # Convert datetime.date to string for JSON serialization
         return {str(date): int(count) for date, count in timeline.to_dict().items()}
 
@@ -197,7 +203,7 @@ class SurveyAnalytics:
         """Extract insights from qualitative responses.
 
         Returns:
-            dict: Qualitative insights from remarks, improvements, and challenges.
+            dict: Qualitative insights from remarks, improvements, challenges, and additional fields.
         """
         if self.df is None and not self.load_data():
             return {}
@@ -208,22 +214,44 @@ class SurveyAnalytics:
                 self.df['final_remarks'].notna() & (self.df['final_remarks'] != '')
             ]['final_remarks'].tolist()
             insights['final_remarks'] = remarks[:10]
-        
-        # Use correct column names from your model
+
         if 'lp3_improvement_areas' in self.df.columns:
             improvements = self.df[
                 self.df['lp3_improvement_areas'].notna() &
                 (self.df['lp3_improvement_areas'] != '')
             ]['lp3_improvement_areas'].tolist()
             insights['improvements'] = improvements[:10]
-        
-        # Use correct column names from your model  
-        if 'ca3_procedure_challenges' in self.df.columns:
+
+        if 'ca4_procedure_challenges' in self.df.columns:
             challenges = self.df[
-                self.df['ca3_procedure_challenges'].notna() &
-                (self.df['ca3_procedure_challenges'] != '')
-            ]['ca3_procedure_challenges'].tolist()
+                self.df['ca4_procedure_challenges'].notna() &
+                (self.df['ca4_procedure_challenges'] != '')
+            ]['ca4_procedure_challenges'].tolist()
             insights['challenges'] = challenges[:10]
+
+        if 'final_feedback' in self.df.columns:
+            feedback = self.df[
+                self.df['final_feedback'].notna() & (self.df['final_feedback'] != '')
+            ]['final_feedback'].tolist()
+            insights['final_feedback'] = feedback[:10]
+
+        if 'lp6_qualitative_text' in self.df.columns:
+            lp6_text = self.df[
+                self.df['lp6_qualitative_text'].notna() & (self.df['lp6_qualitative_text'] != '')
+            ]['lp6_qualitative_text'].tolist()
+            insights['lp6_qualitative_text'] = lp6_text[:10]
+
+        if 'lp8_qualitative_text' in self.df.columns:
+            lp8_text = self.df[
+                self.df['lp8_qualitative_text'].notna() & (self.df['lp8_qualitative_text'] != '')
+            ]['lp8_qualitative_text'].tolist()
+            insights['lp8_qualitative_text'] = lp8_text[:10]
+
+        if 'lp10_qualitative_text' in self.df.columns:
+            lp10_text = self.df[
+                self.df['lp10_qualitative_text'].notna() & (self.df['lp10_qualitative_text'] != '')
+            ]['lp10_qualitative_text'].tolist()
+            insights['lp10_qualitative_text'] = lp10_text[:10]
 
         return insights
 
@@ -459,10 +487,11 @@ class SurveyAnalytics:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"fbr_survey_spss_{timestamp}.csv"
             spss_df = self.df.copy()
-            # Use correct JSON column names from your model
-            json_columns = ['g4_challenged_groups', 'lp2_common_problems', 'lp3_improvement_areas', 
-                           'lp4_procedures', 'lp5_representation_challenges', 'ca3_procedure_challenges',
-                           'ca9_operational_challenges', 'cross_system_answers']
+            json_columns = [
+                'g4_challenged_groups', 'lp2_common_problems', 'lp3_improvement_areas',
+                'lp4_procedures', 'lp5_representation_challenges', 'ca4_procedure_challenges',
+                'ca12_operational_challenges', 'cross_system_answers'
+            ]
             for col in json_columns:
                 if col in spss_df.columns:
                     spss_df[col] = spss_df[col].apply(lambda x: str(x) if x else '')

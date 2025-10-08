@@ -1,5 +1,4 @@
 // static/js/cross_system_script.js
-
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('crossSystemForm');
     if (!form) return;
@@ -11,9 +10,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const backUrl = form.dataset.backUrl;
 
     // Global flag to track if the form is already submitting after character limit confirmation
-    let isSubmitting = false; 
+    let isSubmitting = false;
 
-    // Helper function to create/get error box
+    // Helper function to create/get inline error box
     function createErrorBox() {
         const errorBox = document.createElement('div');
         errorBox.className = 'error-box';
@@ -26,20 +25,112 @@ document.addEventListener('DOMContentLoaded', function () {
         return errorBox;
     }
 
-    // Helper function to display errors consistently
-    function showError(message) {
-        let errorBox = document.getElementById('error-box');
-        if (!errorBox) {
-            errorBox = createErrorBox();
-        }
-        errorBox.style.display = 'block';
-        errorBox.innerHTML = `<div class="error-icon">⚠️</div><div class="error-message">${message}</div>`;
-        errorBox.setAttribute('aria-live', 'assertive');
-        
-        // Scroll to error for visibility
-        setTimeout(() => errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    // Helper function to create modal for errors
+    function createErrorModal(message) {
+        const existingModal = document.getElementById('error-modal');
+        if (existingModal) existingModal.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'error-modal';
+        modal.className = 'error-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-labelledby', 'error-modal-title');
+        modal.setAttribute('aria-describedby', 'error-modal-message');
+        modal.innerHTML = `
+            <div class="error-modal-content">
+                <h2 id="error-modal-title" class="error-modal-title">⚠️ Error</h2>
+                <p id="error-modal-message" class="error-modal-message">${message}</p>
+                <button type="button" class="btn btn-close-modal" aria-label="Close">Close</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const closeButton = modal.querySelector('.btn-close-modal');
+        closeButton.focus();
+
+        closeButton.addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+
+        document.addEventListener('keydown', function handleEscape(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        });
     }
-    
+
+    // Helper function to create confirmation modal for skip section
+    function createConfirmationModal(onConfirm) {
+        const existingModal = document.getElementById('confirmation-modal');
+        if (existingModal) existingModal.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'confirmation-modal';
+        modal.className = 'confirmation-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-labelledby', 'confirmation-modal-title');
+        modal.setAttribute('aria-describedby', 'confirmation-modal-message');
+        modal.innerHTML = `
+            <div class="confirmation-modal-content">
+                <h2 id="confirmation-modal-title" class="confirmation-modal-title">Confirm Skip</h2>
+                <p id="confirmation-modal-message" class="confirmation-modal-message">
+                    Are you sure you want to skip this optional section? You can still provide this feedback later if you change your mind.
+                </p>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-confirm" aria-label="Confirm">Confirm</button>
+                    <button type="button" class="btn btn-cancel" aria-label="Cancel">Cancel</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const confirmButton = modal.querySelector('.btn-confirm');
+        const cancelButton = modal.querySelector('.btn-cancel');
+
+        // Focus on cancel button by default for accessibility
+        cancelButton.focus();
+
+        // Handle confirm button
+        confirmButton.addEventListener('click', () => {
+            modal.remove();
+            onConfirm();
+        });
+
+        // Handle cancel button
+        cancelButton.addEventListener('click', () => modal.remove());
+
+        // Close modal on clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function handleEscape(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        });
+    }
+
+    // Helper function to display errors
+    function showError(message, type = 'inline') {
+        if (type === 'modal') {
+            createErrorModal(message);
+        } else {
+            let errorBox = document.getElementById('error-box');
+            if (!errorBox) {
+                errorBox = createErrorBox();
+            }
+            errorBox.style.display = 'block';
+            errorBox.innerHTML = `<div class="error-icon">⚠️</div><div class="error-message">${message}</div>`;
+            errorBox.setAttribute('aria-live', 'assertive');
+            setTimeout(() => errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        }
+    }
+
     // Initial error box scrolling (for server-side errors, if any)
     const initialErrorBox = document.getElementById('error-box');
     if (initialErrorBox) {
@@ -74,13 +165,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // --------------------------------------------------------
-    // Global Functions (Skip and Back Navigation)
-    // --------------------------------------------------------
-
     // Skip section functionality
     window.skipSection = function() {
-        if (confirm('Are you sure you want to skip this optional section? You can still provide this feedback later if you change your mind.')) {
+        createConfirmationModal(() => {
             const formData = new FormData();
             formData.append('skip_section', 'true');
 
@@ -102,14 +189,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.status === 'success') {
                     window.location.href = skipRedirectUrl;
                 } else {
-                    showError(data.message || 'Error skipping section');
+                    showError(data.message || 'Error skipping section', 'modal');
                 }
             })
             .catch(error => {
                 console.error('Skip section error:', error);
-                showError('Network error occurred. Could not skip section.');
+                showError('Network error occurred. Could not skip section.', 'modal');
             });
-        }
+        });
     };
 
     // Handle back navigation (Saves draft then navigates)
@@ -135,22 +222,17 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.status === 'success') {
                 window.location.href = backUrl;
             } else {
-                showError(data.message || 'Error saving draft before navigation.');
+                showError(data.message || 'Error saving draft before navigation.', 'modal');
             }
         })
         .catch(error => {
             console.error('Back navigation error:', error);
-            showError('Network error occurred. Draft not saved. Please try again.');
+            showError('Network error occurred. Draft not saved. Please try again.', 'modal');
         });
     };
 
-    // --------------------------------------------------------
-    // Local Event Listeners
-    // --------------------------------------------------------
-
     // Form submission (Client-side validation)
     form.addEventListener('submit', function (e) {
-        // Fix for double-submission after confirmation
         if (isSubmitting) {
             e.preventDefault();
             return;
@@ -161,23 +243,19 @@ document.addEventListener('DOMContentLoaded', function () {
         textareas.forEach(({ element, counter }) => {
             if (element.value.length > 1000) {
                 hasExceededLimit = true;
-                counter.style.color = '#dc3545'; 
+                counter.style.color = '#dc3545';
                 counter.classList.add('char-limit-exceeded');
             }
         });
 
         if (hasExceededLimit) {
             e.preventDefault();
-            showError('Some responses exceed the 1000-character limit. Please shorten your answers or confirm to proceed.');
+            showError('Some responses exceed the 1000-character limit. Please shorten your answers or confirm to proceed.', 'inline');
             
             if (confirm('Some responses exceed the recommended character limit. Do you want to proceed anyway?')) {
-                // 1. Set the flag to true to block subsequent submit events
-                isSubmitting = true; 
-                
-                // 2. Manually trigger the native form submission, bypassing this listener
-                this.submit(); 
+                isSubmitting = true;
+                this.submit();
             }
-            // If the user cancels, the form submission remains prevented.
         }
     });
 
@@ -213,6 +291,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Auto-save network error:', error);
                 // Intentionally silent the error to avoid interrupting user flow
             });
-        }, 2000); // Wait 2 seconds after last input
+        }, 2000);
     });
 });
