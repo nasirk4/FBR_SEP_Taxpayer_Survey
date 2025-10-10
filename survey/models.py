@@ -4,30 +4,31 @@ import json
 
 class SurveyResponse(models.Model):
     # Basic Information
-    full_name = models.CharField(max_length=200)
-    email = models.EmailField()
-    district = models.CharField(max_length=100)
-    mobile = models.CharField(max_length=20, blank=True)
-    
+    full_name = models.CharField(max_length=200, help_text="RI1: Respondent's full name")
+    email = models.EmailField(help_text="RI2: Respondent's email address")
+    mobile = models.CharField(max_length=20, blank=True, help_text="RI3: Mobile number (optional)")
+    province = models.CharField(
+        max_length=20,
+        choices=[
+            ('ajk', 'Azad Jammu and Kashmir'),
+            ('balochistan', 'Balochistan'),
+            ('gb', 'Gilgit-Baltistan'),
+            ('ict', 'ICT'),
+            ('kpk', 'Khyber Pakhtunkhwa'),
+            ('punjab', 'Punjab'),
+            ('sindh', 'Sindh'),
+        ],
+        help_text="RI4: Province of residence"
+    )
+    district = models.CharField(max_length=100, help_text="RI5: District of residence (standard or custom)")
+
     # Professional Information
-    PROFESSIONAL_CHOICES = [
-        ('legal', 'Legal Practitioner'),
-        ('customs', 'Customs Agent'),
-        ('both', 'Both'),
-    ]
-    professional_role = models.CharField(max_length=10, choices=PROFESSIONAL_CHOICES)
-    experience_legal = models.CharField(max_length=20, blank=True, null=True)
-    experience_customs = models.CharField(max_length=20, blank=True, null=True)
-    
-    # Geographic Information
-    PROVINCE_CHOICES = [
-        ('balochistan', 'Balochistan'),
-        ('ict', 'ICT'),
-        ('kpk', 'KPK'),
-        ('punjab', 'Punjab'),
-        ('sindh', 'Sindh'),
-    ]
-    province = models.CharField(max_length=20, choices=PROVINCE_CHOICES)
+    professional_role = models.CharField(max_length=20, blank=True, help_text="RI6: Professional role(s) as comma-separated values (e.g., 'legal', 'customs', 'legal,customs')")
+    experience_legal = models.CharField(max_length=20, blank=True, null=True, help_text="RI8: Years of experience as Legal Practitioner (if applicable)")
+    experience_customs = models.CharField(max_length=20, blank=True, null=True, help_text="RI9: Years of experience as Customs Agent (if applicable)")
+    practice_areas = models.CharField(max_length=100, blank=True, help_text="RI7: Primary practice areas as comma-separated values (e.g., 'income_tax,sales_tax')")
+    kii_consent = models.CharField(max_length=3, choices=[('yes', 'Yes'), ('no', 'No')], blank=True, help_text="RI10: Consent for follow-up interview (yes/no)")
+
     
     # Generic Questions (G1-G8)
     g1_iris_rating = models.CharField(max_length=20, blank=True)
