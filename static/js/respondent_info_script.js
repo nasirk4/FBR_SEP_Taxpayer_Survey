@@ -21,6 +21,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const customInput = document.getElementById('custom_district');
     const finalDistrict = document.getElementById('final_district');
     const dropdownOptions = dropdown.querySelectorAll('.dropdown-option');
+    
+    // ADD THE MISSING VARIABLE - This was causing the issue
+    const districtOptions = dropdown.querySelectorAll('.dropdown-option');
 
     // --- Professional Role Elements ---
     const legalCheckbox = document.getElementById('legalPractitioner');
@@ -183,15 +186,23 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.value = this.value;
     });
 
-    // Close dropdown when clicking outside
+    // Close dropdown when clicking outside - IMPROVED VERSION
     document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !dropdown.contains(e.target) && !customInput.contains(e.target)) {
+        const isDistrictRelated = 
+            searchInput.contains(e.target) || 
+            dropdown.contains(e.target) || 
+            customInput.contains(e.target) ||
+            (e.target.classList && e.target.classList.contains('dropdown-option')) ||
+            (e.target.parentElement && e.target.parentElement.classList && 
+             e.target.parentElement.classList.contains('dropdown-option'));
+        
+        if (!isDistrictRelated) {
             dropdown.style.display = 'none';
             if (isMobile) document.body.classList.remove('dropdown-open');
         }
     });
 
-    // Filter function
+    // Filter function - NOW USING districtOptions VARIABLE
     function filterDistricts() {
         const query = searchInput.value.toLowerCase();
         const selectedProvince = finalProvince.value;
@@ -214,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        const customOption = districtDropdown.querySelector('.custom-option');
+        const customOption = dropdown.querySelector('.custom-option');
         if (query && !hasVisibleOptions && selectedProvince) {
             customOption.style.display = 'block';
         } else if (query && hasVisibleOptions && selectedProvince) {
