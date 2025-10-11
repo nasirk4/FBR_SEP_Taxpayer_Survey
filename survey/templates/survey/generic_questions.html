@@ -126,15 +126,15 @@
 
         <!-- G4: Follow-up on Technical Issues (Conditional) -->
         <div class="question-card" id="g4_section"
-             {% if generic_answers.g3_technical_issues not in ['daily', 'weekly', 'monthly', 'rarely'] %}style="display: none;"{% endif %}>
+            {% if generic_answers.g3_technical_issues != 'daily' and generic_answers.g3_technical_issues != 'weekly' and generic_answers.g3_technical_issues != 'monthly' and generic_answers.g3_technical_issues != 'rarely' %}style="display: none;"{% endif %}>
             <div class="question-text">G4. Thinking about the technical issues you encountered, how significantly did they disrupt your operations?</div>
             <div class="radio-group compact">
                 {% for value, label in g4_options %}
                 <div class="radio-item">
                     <input type="radio" id="g4_{{ value }}" name="g4_disruption" value="{{ value }}"
-                           {% if generic_answers.g4_disruption == value %}checked{% endif %}
-                           {% if generic_answers.g3_technical_issues in ['daily', 'weekly', 'monthly', 'rarely'] %}required{% endif %}
-                           aria-required="true">
+                        {% if generic_answers.g4_disruption == value %}checked{% endif %}
+                        {% if generic_answers.g3_technical_issues == 'daily' or generic_answers.g3_technical_issues == 'weekly' or generic_answers.g3_technical_issues == 'monthly' or generic_answers.g3_technical_issues == 'rarely' %}required{% endif %}
+                        aria-required="true">
                     <label for="g4_{{ value }}">{{ label }}</label>
                 </div>
                 {% endfor %}
