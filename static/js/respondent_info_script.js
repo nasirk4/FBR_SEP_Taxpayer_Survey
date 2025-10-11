@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const provinceDropdown = document.getElementById('province_dropdown');
     const finalProvince = document.getElementById('final_province');
     const provinceOptions = provinceDropdown.querySelectorAll('.dropdown-option');
-    const provinceSelect = document.getElementById('province');
     
     // --- District Dropdown Elements ---
     const searchInput = document.getElementById('district_search');
@@ -22,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const finalDistrict = document.getElementById('final_district');
     const dropdownOptions = dropdown.querySelectorAll('.dropdown-option');
     
-    // ADD THE MISSING VARIABLE - This was causing the issue
+    // FIX: Added missing districtOptions variable
     const districtOptions = dropdown.querySelectorAll('.dropdown-option');
 
     // --- Professional Role Elements ---
@@ -98,12 +97,13 @@ document.addEventListener('DOMContentLoaded', function () {
         filterProvinces();
         provinceDropdown.style.display = 'block';
         if (isMobile) document.body.classList.add('dropdown-open');
-    })
+    });
 
     provinceSearch.addEventListener('input', function () {
         filterProvinces();
         provinceDropdown.style.display = 'block';
     });
+
     provinceOptions.forEach(option => {
         option.addEventListener('click', function () {
             provinceSearch.value = this.textContent;
@@ -113,13 +113,14 @@ document.addEventListener('DOMContentLoaded', function () {
             provinceDropdown.style.display = 'none';
             if (isMobile) document.body.classList.remove('dropdown-open');
             // Reset district fields and filter
-            districtSearch.value = '';
+            searchInput.value = '';
             finalDistrict.value = '';
             customInput.style.display = 'none';
             customInput.required = false;
             filterDistricts();
         });
     });
+
     function filterProvinces() {
         const query = provinceSearch.value.toLowerCase();
         provinceOptions.forEach(option => {
@@ -127,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function () {
             option.style.display = text.includes(query) ? 'block' : 'none';
         });
     }
-
 
     // -- District Dropdown Logic ---
     // Show dropdown when search input is focused or has value
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Reset district when province changes
-    provinceSelect.addEventListener('change', function() {
+    finalProvince.addEventListener('change', function() {
         searchInput.value = '';
         finalDistrict.value = '';
         customInput.value = '';
@@ -202,39 +202,56 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Filter function - NOW USING districtOptions VARIABLE
+    // FIXED: Proper district filtering function
     function filterDistricts() {
         const query = searchInput.value.toLowerCase();
         const selectedProvince = finalProvince.value;
-        let hasVisibleOptions = false;
+        
+        console.log('Filtering districts - Province:', selectedProvince, 'Query:', query);
+
+        let hasVisibleRegularOptions = false;
+        const customOption = dropdown.querySelector('.custom-option');
 
         districtOptions.forEach(option => {
             const text = option.textContent.toLowerCase();
             const isCustomOption = option.classList.contains('custom-option');
             const optionProvince = option.dataset.province;
 
-            if (isCustomOption && selectedProvince) {
-                option.style.display = 'block';
-            } else if (selectedProvince && optionProvince !== selectedProvince) {
-                option.style.display = 'none';
-            } else if (text.includes(query)) {
-                option.style.display = 'block';
-                hasVisibleOptions = true;
-            } else {
-                option.style.display = 'none';
+            // Skip custom option for now
+            if (isCustomOption) {
+                return;
+            }
+
+            // Show/hide based on province and search query
+            let shouldShow = true;
+
+            // Filter by province if one is selected
+            if (selectedProvince && optionProvince !== selectedProvince) {
+                shouldShow = false;
+            }
+            
+            // Filter by search query if there is one
+            if (shouldShow && query && !text.includes(query)) {
+                shouldShow = false;
+            }
+
+            option.style.display = shouldShow ? 'block' : 'none';
+            
+            if (shouldShow && !isCustomOption) {
+                hasVisibleRegularOptions = true;
             }
         });
 
-        const customOption = dropdown.querySelector('.custom-option');
-        if (query && !hasVisibleOptions && selectedProvince) {
-            customOption.style.display = 'block';
-        } else if (query && hasVisibleOptions && selectedProvince) {
-            customOption.style.display = 'block';
-        } else if (!query && selectedProvince) {
+        // Handle custom option visibility
+        if (selectedProvince) {
+            // Show custom option if province is selected
             customOption.style.display = 'block';
         } else {
+            // Hide custom option if no province selected
             customOption.style.display = 'none';
         }
+
+        console.log('Visible regular options:', hasVisibleRegularOptions);
     }
 
     // Initialize state for district field
