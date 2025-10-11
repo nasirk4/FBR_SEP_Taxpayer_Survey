@@ -92,9 +92,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initial setup for experience sections
     updateRoleSelection();
 
-    // Province Dropdown Logic
+    // --- Province Dropdown Logic - COMPLETELY REWRITTEN ---
     provinceSearch.addEventListener('focus', function () {
-        filterProvinces();
+        // Clear the search and show ALL provinces when focused
+        provinceSearch.value = '';
+        showAllProvinces();
         provinceDropdown.style.display = 'block';
         if (isMobile) document.body.classList.add('dropdown-open');
     });
@@ -106,13 +108,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     provinceOptions.forEach(option => {
         option.addEventListener('click', function () {
-            provinceSearch.value = this.textContent;
-            finalProvince.value = this.dataset.value;
+            const selectedText = this.textContent;
+            const selectedValue = this.dataset.value;
+            
+            provinceSearch.value = selectedText;
+            finalProvince.value = selectedValue;
+            
+            // Update selected state
             provinceOptions.forEach(opt => opt.classList.remove('selected'));
             this.classList.add('selected');
+            
             provinceDropdown.style.display = 'none';
             if (isMobile) document.body.classList.remove('dropdown-open');
-            // Reset district fields and filter
+            
+            // Reset and filter districts based on new province
             searchInput.value = '';
             finalDistrict.value = '';
             customInput.style.display = 'none';
@@ -120,6 +129,13 @@ document.addEventListener('DOMContentLoaded', function () {
             filterDistricts();
         });
     });
+
+    // Show all provinces (reset filtering)
+    function showAllProvinces() {
+        provinceOptions.forEach(option => {
+            option.style.display = 'block';
+        });
+    }
 
     function filterProvinces() {
         const query = provinceSearch.value.toLowerCase();
@@ -129,15 +145,27 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // -- District Dropdown Logic ---
-    // Show dropdown when search input is focused or has value
+    // Allow clearing province selection by backspacing or deleting
+    provinceSearch.addEventListener('keydown', function(e) {
+        if ((e.key === 'Backspace' || e.key === 'Delete') && provinceSearch.value === '') {
+            finalProvince.value = '';
+            provinceOptions.forEach(opt => opt.classList.remove('selected'));
+            // Reset districts when province is cleared
+            searchInput.value = '';
+            finalDistrict.value = '';
+            customInput.style.display = 'none';
+            customInput.required = false;
+            filterDistricts();
+        }
+    });
+
+    // --- District Dropdown Logic ---
     searchInput.addEventListener('focus', function() {
         filterDistricts();
         dropdown.style.display = 'block';
         if (isMobile) document.body.classList.add('dropdown-open');
     });
 
-    // Filter districts based on search input and province
     searchInput.addEventListener('input', function() {
         filterDistricts();
         dropdown.style.display = 'block';
@@ -153,7 +181,6 @@ document.addEventListener('DOMContentLoaded', function () {
         customInput.style.display = 'none';
         customInput.required = false;
         filterDistricts();
-        dropdown.style.display = 'block';
     });
 
     // Handle selection from dropdown
@@ -162,6 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const value = this.dataset.value;
             dropdownOptions.forEach(opt => opt.classList.remove('selected'));
             this.classList.add('selected');
+            
             if (value === '__custom__') {
                 customInput.style.display = 'block';
                 customInput.required = true;
@@ -186,15 +214,23 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.value = this.value;
     });
 
-    // Close dropdown when clicking outside - IMPROVED VERSION
+    // --- Unified Click Outside Handler ---
     document.addEventListener('click', function(e) {
+        // Check for province dropdown
+        const isProvinceRelated = 
+            provinceSearch.contains(e.target) || 
+            provinceDropdown.contains(e.target);
+        
+        if (!isProvinceRelated) {
+            provinceDropdown.style.display = 'none';
+        }
+        
+        // Check for district dropdown
         const isDistrictRelated = 
             searchInput.contains(e.target) || 
             dropdown.contains(e.target) || 
             customInput.contains(e.target) ||
-            (e.target.classList && e.target.classList.contains('dropdown-option')) ||
-            (e.target.parentElement && e.target.parentElement.classList && 
-             e.target.parentElement.classList.contains('dropdown-option'));
+            (e.target.classList && e.target.classList.contains('dropdown-option'));
         
         if (!isDistrictRelated) {
             dropdown.style.display = 'none';
@@ -202,15 +238,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // FIXED: Proper district filtering function
+    // --- District Filtering Function ---
     function filterDistricts() {
         const query = searchInput.value.toLowerCase();
         const selectedProvince = finalProvince.value;
         
         console.log('Filtering districts - Province:', selectedProvince, 'Query:', query);
-
-        let hasVisibleRegularOptions = false;
-        const customOption = dropdown.querySelector('.custom-option');
 
         districtOptions.forEach(option => {
             const text = option.textContent.toLowerCase();
@@ -222,7 +255,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Show/hide based on province and search query
             let shouldShow = true;
 
             // Filter by province if one is selected
@@ -236,22 +268,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             option.style.display = shouldShow ? 'block' : 'none';
-            
-            if (shouldShow && !isCustomOption) {
-                hasVisibleRegularOptions = true;
-            }
         });
 
         // Handle custom option visibility
+        const customOption = dropdown.querySelector('.custom-option');
         if (selectedProvince) {
-            // Show custom option if province is selected
             customOption.style.display = 'block';
         } else {
-            // Hide custom option if no province selected
             customOption.style.display = 'none';
         }
-
-        console.log('Visible regular options:', hasVisibleRegularOptions);
     }
 
     // Initialize state for district field
