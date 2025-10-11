@@ -3,6 +3,7 @@ from survey.utils.progress import get_progress_context
 from survey.utils.session_utils import sanitize_input, validate_session_size
 from survey.models import SurveyResponse
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,6 @@ def get_generic_questions_context():
         }
     }
     return context
-
 
 def validate_generic_questions_form(request, context_data):
     """Validate generic questions form data."""
@@ -124,6 +124,7 @@ def handle_generic_questions_post(request, context_data):
         context = get_progress_context(current_step=3, total_steps=6)
         context.update(context_data)
         context['generic_answers'] = generic_answers
+        context['generic_answers_json'] = json.dumps(generic_answers)
         context['error'] = "Please correct the following errors:\n" + "\n".join(errors)
         return render(request, 'survey/generic_questions.html', context)
 
@@ -152,6 +153,7 @@ def handle_generic_questions_post(request, context_data):
         context = get_progress_context(current_step=3, total_steps=6)
         context.update(context_data)
         context['generic_answers'] = generic_answers
+        context['generic_answers_json'] = json.dumps(generic_answers)
         context['error'] = "An error occurred while saving your responses. Please try again."
         return render(request, 'survey/generic_questions.html', context)
 
@@ -164,6 +166,7 @@ def handle_generic_questions_get(request, context_data):
     context.update(context_data)
     context['respondent_id'] = request.session.get('respondent_info', {}).get('id', '')
     context['generic_answers'] = request.session.get('generic_answers', {'g1': {}, 'g2': {}})
+    context['generic_answers_json'] = json.dumps(context['generic_answers'])
     
     logger.debug(f"Final context prepared for template with progress: {progress_context}")
     return render(request, 'survey/generic_questions.html', context)
@@ -192,5 +195,7 @@ def generic_questions_view(request):
         logger.error(f"Unexpected error in generic_questions_view: {e}")
         context = get_progress_context(current_step=3, total_steps=6)
         context.update(context_data)
+        context['generic_answers'] = request.session.get('generic_answers', {'g1': {}, 'g2': {}})
+        context['generic_answers_json'] = json.dumps(context['generic_answers'])
         context['error'] = "An unexpected error occurred. Please try again."
         return render(request, 'survey/generic_questions.html', context)

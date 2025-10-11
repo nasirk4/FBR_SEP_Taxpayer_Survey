@@ -27,6 +27,8 @@
     <form method="POST" id="genericQuestionsForm" novalidate>
         {% csrf_token %}
         <input type="hidden" name="respondent_id" value="{{ respondent_id }}">
+        <!-- Hidden input to pass generic_answers for JavaScript -->
+        <input type="hidden" id="generic_answers" value="{{ generic_answers_json }}">
 
         <!-- G1: Policy Impact Matrix -->
         <div class="question-card">
@@ -52,7 +54,6 @@
                         <td>
                             <div class="radio-item">
                                 <input type="radio" id="g1_{{ aspect }}_{{ value }}" name="g1_{{ aspect }}" value="{{ value }}" required
-                                       {% if generic_answers.g1 and generic_answers.g1[aspect] == value %}checked{% endif %}
                                        aria-required="true">
                                 <label for="g1_{{ aspect }}_{{ value }}">{{ label }}</label>
                             </div>
@@ -91,7 +92,6 @@
                         <td>
                             <div class="radio-item">
                                 <input type="radio" id="g2_{{ aspect }}_{{ value }}" name="g2_{{ aspect }}" value="{{ value }}" required
-                                       {% if generic_answers.g2 and generic_answers.g2[aspect] == value %}checked{% endif %}
                                        aria-required="true">
                                 <label for="g2_{{ aspect }}_{{ value }}">{{ label }}</label>
                             </div>

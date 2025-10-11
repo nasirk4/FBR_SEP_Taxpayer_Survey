@@ -4,6 +4,40 @@ function handleBackNavigation(url) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Set checked states for G1 and G2 from generic_answers_json
+    const genericAnswersInput = document.getElementById('generic_answers');
+    if (genericAnswersInput) {
+        try {
+            const genericAnswers = JSON.parse(genericAnswersInput.value);
+            
+            // Set G1 checked states
+            const g1Aspects = ['service_delivery', 'client_numbers', 'revenue_fees', 'compliance_burden'];
+            g1Aspects.forEach(aspect => {
+                const value = genericAnswers.g1[aspect];
+                if (value) {
+                    const input = document.getElementById(`g1_${aspect}_${value}`);
+                    if (input) {
+                        input.checked = true;
+                    }
+                }
+            });
+
+            // Set G2 checked states
+            const g2Aspects = ['workflow_efficiency', 'service_delivery', 'client_numbers'];
+            g2Aspects.forEach(aspect => {
+                const value = genericAnswers.g2[aspect];
+                if (value) {
+                    const input = document.getElementById(`g2_${aspect}_${value}`);
+                    if (input) {
+                        input.checked = true;
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Error parsing generic_answers_json:', e);
+        }
+    }
+
     // Error box scrolling
     const errorBox = document.getElementById('error-box');
     if (errorBox) {
@@ -19,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
             g4Section.style.display = ['daily', 'weekly', 'monthly', 'rarely'].includes(g3Value) ? 'block' : 'none';
             g4Inputs.forEach(input => {
                 input.required = ['daily', 'weekly', 'monthly', 'rarely'].includes(g3Value);
-                if (!g4Section.style.display === 'block') {
+                if (g4Section.style.display !== 'block') {
                     input.checked = false;
                 }
             });
@@ -31,8 +65,30 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     toggleG4Section(); // Initialize on load
 
+    // Detect Bootstrap version
+    const bootstrapVersion = typeof bootstrap !== 'undefined' && bootstrap.Modal && bootstrap.Modal.VERSION ? bootstrap.Modal.VERSION : '4';
+    const isBootstrap5 = bootstrapVersion.startsWith('5');
+
     // Create Bootstrap confirmation modal
-    const modalHtml = `
+    const modalHtml = isBootstrap5 ? `
+        <div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmSubmitModalLabel">Confirm Submission</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to submit your responses?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-back" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-next" id="confirmSubmitBtn">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    ` : `
         <div class="modal fade" id="confirmSubmitModal" tabindex="-1" role="dialog" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
