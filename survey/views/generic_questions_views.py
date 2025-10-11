@@ -1,145 +1,95 @@
-# survey/views/generic_questions_views.py
 from django.shortcuts import render, redirect
 from survey.utils.progress import get_progress_context
 from survey.utils.session_utils import sanitize_input, validate_session_size
+from survey.models import SurveyResponse
 import logging
 
 logger = logging.getLogger(__name__)
 
 def get_generic_questions_context():
-    """
-    Return standardized context for generic questions form options.
-    
-    Returns:
-        dict: Context with all question options and validation rules
-    """
-    challenged_groups = [
-        ('limited_tax_understanding', 'People with limited tax understanding'),
-        ('business_community', 'Business community'),
-        ('salaried_class', 'Salaried class'),
-        ('women_taxpayers', 'Women taxpayers'),
-        ('differently_abled', 'Differently-abled taxpayers'),
-        ('low_it_literacy', 'People with low IT literacy'),
-        ('senior_citizens', 'Senior Citizens'),
-        ('others', 'Others (please specify)'),
+    """Return standardized context for generic questions form options."""
+    matrix_options = [
+        ('very_positive', 'Very Positive'), ('positive', 'Positive'), ('neutral', 'Neutral'),
+        ('negative', 'Negative'), ('very_negative', 'Very Negative'), ('na', 'N/A'), ('dont_know', 'Don’t Know')
     ]
-    
-    g1_iris_rating_options = [
-        ('1', 'Very user-friendly'),
-        ('2', 'User-friendly'),
-        ('3', 'Neutral'),
-        ('4', 'Not user-friendly'),
-        ('5', 'Not at all user-friendly'),
+    g3_options = [
+        ('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly'),
+        ('rarely', 'Rarely'), ('never', 'Never'), ('dont_know', 'Don’t Know')
     ]
-    
-    g2_system_weaknesses_options = [
-        ('yes', 'Yes'),
-        ('no', 'No'),
+    g4_options = [
+        ('very_significantly', 'Very significantly'), ('significantly', 'Significantly'),
+        ('minimally', 'Minimally'), ('not_at_all', 'Not at all')
     ]
-    
     g5_options = [
-        ('significantly_increased', 'Significantly increased'),
-        ('slightly_increased', 'Slightly increased'),
-        ('no_change', 'No change'),
-        ('slightly_decreased', 'Slightly decreased'),
-        ('significantly_decreased', 'Significantly decreased'),
+        ('very_significantly', 'Very significantly'), ('significantly', 'Significantly'), ('neutral', 'Neutral'),
+        ('minimally', 'Minimally'), ('not_at_all', 'Not at all'), ('dont_know', 'Don’t Know')
     ]
-    
-    g6_options = [
-        ('significantly_increased', 'Significantly increased'),
-        ('slightly_increased', 'Slightly increased'),
-        ('no_change', 'No change'),
-        ('slightly_decreased', 'Slightly decreased'),
-        ('significantly_decreased', 'Significantly decreased'),
-    ]
-    
-    g7_options = [
-        ('major_impact', 'Major impact'),
-        ('moderate_impact', 'Moderate impact'),
-        ('minor_impact', 'Minor impact'),
-        ('no_impact', 'No impact'),
-    ]
-    
-    g8_options = [
-        ('yes_significantly', 'Yes, significantly'),
-        ('yes_somewhat', 'Yes, somewhat'),
-        ('no_similar', 'No, they are similar'),
-        ('dont_know', 'I don\'t have enough information'),
-    ]
-
     context = {
-        'challenged_groups': challenged_groups,
-        'g1_iris_rating_options': g1_iris_rating_options,
-        'g2_system_weaknesses_options': g2_system_weaknesses_options,
+        'g1_matrix_options': matrix_options,
+        'g2_matrix_options': matrix_options,
+        'g3_options': g3_options,
+        'g4_options': g4_options,
         'g5_options': g5_options,
-        'g6_options': g6_options,
-        'g7_options': g7_options,
-        'g8_options': g8_options,
         'valid_options': {
-            'g1_iris_rating': [opt[0] for opt in g1_iris_rating_options],
-            'g2_system_weaknesses': [opt[0] for opt in g2_system_weaknesses_options],
-            'g5_clients_change': [opt[0] for opt in g5_options],
-            'g6_fee_change': [opt[0] for opt in g6_options],
-            'g7_digital_literacy_impact': [opt[0] for opt in g7_options],
-            'g8_regional_differences': [opt[0] for opt in g8_options],
+            'g1': [opt[0] for opt in matrix_options],
+            'g2': [opt[0] for opt in matrix_options],
+            'g3_technical_issues': [opt[0] for opt in g3_options],
+            'g4_disruption': [opt[0] for opt in g4_options],
+            'g5_digital_literacy': [opt[0] for opt in g5_options]
         }
     }
     return context
 
 def validate_generic_questions_form(request, context_data):
-    """
-    Validate generic questions form data.
-    
-    Args:
-        request: Django request object
-        context_data: Context with validation rules
-        
-    Returns:
-        tuple: (generic_answers, errors, is_valid)
-    """
+    """Validate generic questions form data."""
     errors = []
-    generic_answers = {}
+    generic_answers = {'g1': {}, 'g2': {}}
 
     try:
-        # Required radio fields validation
-        required_fields = [
-            'g1_iris_rating', 'g2_system_weaknesses', 'g5_clients_change',
-            'g6_fee_change', 'g7_digital_literacy_impact', 'g8_regional_differences'
-        ]
-        
-        for field in required_fields:
-            value = request.POST.get(field, '').strip()
+        # G1: Policy Impact Matrix
+        g1_aspects = ['service_delivery', 'client_numbers', 'revenue_fees', 'compliance_burden']
+        for aspect in g1_aspects:
+            value = request.POST.get(f'g1_{aspect}', '').strip()
             if not value:
-                errors.append(f"Missing required field: {field.replace('_', ' ').title()} (G{field[1]})")
-            elif value not in context_data['valid_options'][field]:
-                errors.append(f"Invalid value for {field.replace('_', ' ').title()} (G{field[1]})")
-            generic_answers[field] = value
+                errors.append(f"Please select an option for G1 {aspect.replace('_', ' ').title()}")
+            elif value not in context_data['valid_options']['g1']:
+                errors.append(f"Invalid value for G1 {aspect.replace('_', ' ').title()}")
+            generic_answers['g1'][aspect] = value
 
-        # G2: Platform limitations (optional)
-        generic_answers['g2_platform_limitations'] = sanitize_input(
-            request.POST.get('g2_platform_limitations', '')
-        )
+        # G2: System Impact Matrix
+        g2_aspects = ['workflow_efficiency', 'service_delivery', 'client_numbers']
+        for aspect in g2_aspects:
+            value = request.POST.get(f'g2_{aspect}', '').strip()
+            if not value:
+                errors.append(f"Please select an option for G2 {aspect.replace('_', ' ').title()}")
+            elif value not in context_data['valid_options']['g2']:
+                errors.append(f"Invalid value for G2 {aspect.replace('_', ' ').title()}")
+            generic_answers['g2'][aspect] = value
 
-        # G3a: Conditional validation for system weaknesses details
-        g2a_details = sanitize_input(request.POST.get('g2a_weaknesses_details', ''))
-        if generic_answers.get('g2_system_weaknesses') == 'yes' and not g2a_details:
-            errors.append("Please provide details for system weaknesses in G3a")
-        generic_answers['g2a_weaknesses_details'] = g2a_details if generic_answers.get('g2_system_weaknesses') == 'yes' else ''
+        # G3: Technical Issues
+        g3_value = request.POST.get('g3_technical_issues', '').strip()
+        if not g3_value:
+            errors.append("Please select an option for G3 Technical Issues")
+        elif g3_value not in context_data['valid_options']['g3_technical_issues']:
+            errors.append("Invalid value for G3 Technical Issues")
+        generic_answers['g3_technical_issues'] = g3_value
 
-        # G4: Challenged groups (multiple selection with validation)
-        g4_groups = request.POST.getlist('g4_challenged_groups', [])
-        if not g4_groups:
-            errors.append("Please select at least one challenged group in G4")
-        if 'others' in g4_groups and not request.POST.get('g4_other_text', '').strip():
-            errors.append("Please specify details for 'Others' in G4")
-        generic_answers['g4_challenged_groups'] = g4_groups
-        generic_answers['g4_other_text'] = sanitize_input(request.POST.get('g4_other_text', ''))
+        # G4: Disruption (conditional)
+        g4_value = request.POST.get('g4_disruption', '').strip()
+        if g3_value in ['daily', 'weekly', 'monthly', 'rarely']:
+            if not g4_value:
+                errors.append("Please select an option for G4 Disruption")
+            elif g4_value not in context_data['valid_options']['g4_disruption']:
+                errors.append("Invalid value for G4 Disruption")
+        generic_answers['g4_disruption'] = g4_value if g3_value in ['daily', 'weekly', 'monthly', 'rarely'] else ''
 
-        # G8: Conditional validation for regional differences
-        g8_details = sanitize_input(request.POST.get('g8_regional_differences_text', ''))
-        if generic_answers.get('g8_regional_differences') in ['yes_significantly', 'yes_somewhat'] and not g8_details:
-            errors.append("Please provide details for regional differences in G8")
-        generic_answers['g8_regional_differences_text'] = g8_details if generic_answers.get('g8_regional_differences') in ['yes_significantly', 'yes_somewhat'] else ''
+        # G5: Digital Literacy
+        g5_value = request.POST.get('g5_digital_literacy', '').strip()
+        if not g5_value:
+            errors.append("Please select an option for G5 Digital Literacy")
+        elif g5_value not in context_data['valid_options']['g5_digital_literacy']:
+            errors.append("Invalid value for G5 Digital Literacy")
+        generic_answers['g5_digital_literacy'] = g5_value
 
         is_valid = len(errors) == 0
         return generic_answers, errors, is_valid
@@ -150,16 +100,7 @@ def validate_generic_questions_form(request, context_data):
         return {}, errors, False
 
 def handle_generic_questions_post(request, context_data):
-    """
-    Handle POST request for generic questions form.
-    
-    Args:
-        request: Django request object
-        context_data: Context with form options
-        
-    Returns:
-        HttpResponse: Redirect or render response
-    """
+    """Handle POST request for generic questions form."""
     logger.debug("Processing generic questions POST request")
     
     generic_answers, errors, is_valid = validate_generic_questions_form(request, context_data)
@@ -173,13 +114,24 @@ def handle_generic_questions_post(request, context_data):
         return render(request, 'survey/generic_questions.html', context)
 
     try:
-        # Save to session
+        # Save to session for data persistence
         validate_session_size(request)
         request.session['generic_answers'] = generic_answers
         request.session.modified = True
-        
-        logger.info("Generic questions saved successfully, redirecting to role-specific questions")
-        return redirect('survey:role_specific_questions')
+
+        # Save to database
+        respondent_id = request.session.get('respondent_info', {}).get('id')
+        if respondent_id:
+            survey_response = SurveyResponse.objects.get(id=respondent_id)
+            survey_response.g1_policy_impact = generic_answers['g1']
+            survey_response.g2_system_impact = generic_answers['g2']
+            survey_response.g3_technical_issues = generic_answers['g3_technical_issues']
+            survey_response.g4_disruption = generic_answers['g4_disruption']
+            survey_response.g5_digital_literacy = generic_answers['g5_digital_literacy']
+            survey_response.save()
+
+        logger.info("Generic questions saved successfully, redirecting to legal practitioner section")
+        return redirect('survey:legal_practitioner')
         
     except Exception as e:
         logger.error(f"Error saving generic answers: {e}")
@@ -190,42 +142,20 @@ def handle_generic_questions_post(request, context_data):
         return render(request, 'survey/generic_questions.html', context)
 
 def handle_generic_questions_get(request, context_data):
-    """
-    Handle GET request for generic questions form.
-    
-    Args:
-        request: Django request object
-        context_data: Context with form options
-        
-    Returns:
-        HttpResponse: Render response with form
-    """
+    """Handle GET request for generic questions form."""
     logger.debug("Rendering generic questions GET request")
     
-    # Get progress context with detailed logging
-    logger.debug("Calling get_progress_context for step 3")
     progress_context = get_progress_context(current_step=3, total_steps=6)
-    logger.debug(f"Progress context received: {progress_context}")
-    
-    # Build final context
     context = progress_context
     context.update(context_data)
-    context['generic_answers'] = request.session.get('generic_answers', {})
+    context['respondent_id'] = request.session.get('respondent_info', {}).get('id', '')
+    context['generic_answers'] = request.session.get('generic_answers', {'g1': {}, 'g2': {}})
     
     logger.debug(f"Final context prepared for template with progress: {progress_context}")
     return render(request, 'survey/generic_questions.html', context)
 
 def generic_questions_view(request):
-    """
-    Render the generic questions page (step 3) and handle form submission.
-    
-    This view:
-    - Validates session prerequisites
-    - Handles both GET and POST requests
-    - Manages form validation and error handling
-    - Maintains progress tracking
-    """
-    # Session validation
+    """Render the generic questions page (step 3) and handle form submission."""
     if not request.session.get('survey_started'):
         logger.warning("Survey not started, redirecting to welcome")
         return redirect('survey:welcome')
@@ -236,7 +166,6 @@ def generic_questions_view(request):
 
     logger.debug(f"Generic questions view accessed - method: {request.method}")
     
-    # Get form options context
     context_data = get_generic_questions_context()
 
     try:
@@ -251,18 +180,3 @@ def generic_questions_view(request):
         context.update(context_data)
         context['error'] = "An unexpected error occurred. Please try again."
         return render(request, 'survey/generic_questions.html', context)
-
-# Utility function for template debugging (optional)
-def debug_progress_context():
-    """
-    Utility function to debug progress context calculation.
-    Useful for testing in Django shell.
-    """
-    from .utils import get_progress_context
-    context = get_progress_context(current_step=3, total_steps=6)
-    print("Progress Context Debug:")
-    print(f"  Step: {context.get('current_step')}")
-    print(f"  Progress: {context.get('progress_percentage')}%")
-    print(f"  Width: {context.get('progress_width')}")
-    print(f"  Total Steps: {context.get('total_steps')}")
-    return context

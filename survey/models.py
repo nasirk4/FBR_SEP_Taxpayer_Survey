@@ -27,22 +27,15 @@ class SurveyResponse(models.Model):
     experience_legal = models.CharField(max_length=20, blank=True, null=True, help_text="RI8: Years of experience as Legal Practitioner (if applicable)")
     experience_customs = models.CharField(max_length=20, blank=True, null=True, help_text="RI9: Years of experience as Customs Agent (if applicable)")
     practice_areas = models.CharField(max_length=100, blank=True, help_text="RI7: Primary practice areas as comma-separated values (e.g., 'income_tax,sales_tax')")
-    kii_consent = models.CharField(max_length=3, choices=[('yes', 'Yes'), ('no', 'No')], blank=True, help_text="RI10: Consent for follow-up interview (yes/no)")
+    kii_consent = models.CharField(max_length=3, choices=[('yes', 'Yes'), ('no', 'No')], blank=True, help_text="RI10: Consent for follow-up interview")
 
-    
-    # Generic Questions (G1-G8)
-    g1_iris_rating = models.CharField(max_length=20, blank=True)
-    g2_system_weaknesses = models.CharField(max_length=3, blank=True)
-    g2a_weaknesses_details = models.TextField(blank=True)
-    g3_iris_limitations = models.TextField(blank=True)
-    g4_challenged_groups = models.JSONField(default=list)  # Store multiple selections
-    g4_other_text = models.TextField(blank=True)
-    g5_clients_change = models.CharField(max_length=30, blank=True)
-    g6_fee_change = models.CharField(max_length=30, blank=True)
-    g7_digital_literacy_impact = models.CharField(max_length=30, blank=True)
-    g8_regional_differences = models.CharField(max_length=30, blank=True)
-    g8_regional_differences_text = models.TextField(blank=True)
-    
+    # Generic Questions (G1-G5)
+    g1_policy_impact = models.JSONField(default=dict, blank=True, help_text="G1: Policy impact matrix (e.g., {'service_delivery': 'positive', ...})")
+    g2_system_impact = models.JSONField(default=dict, blank=True, help_text="G2: System impact matrix (e.g., {'workflow_efficiency': 'positive', ...})")
+    g3_technical_issues = models.CharField(max_length=20, blank=True, help_text="G3: Frequency of technical issues (e.g., 'daily', 'never')")
+    g4_disruption = models.CharField(max_length=20, blank=True, null=True, help_text="G4: Significance of disruptions (e.g., 'very_significantly', null if skipped)")
+    g5_digital_literacy = models.CharField(max_length=20, blank=True, help_text="G5: Digital literacy needs (e.g., 'neutral')")
+
     # Legal Practitioner Questions (LP1-LP13)
     lp1_technical_issues = models.CharField(max_length=30, blank=True)
     lp2_common_problems = models.JSONField(default=list, blank=True)
@@ -57,21 +50,21 @@ class SurveyResponse(models.Model):
     lp5_representation_challenges = models.JSONField(default=list, blank=True)
     lp5_other_text = models.TextField(blank=True)
     lp6_filing_efficiency = models.CharField(max_length=30, blank=True)
-    lp6_qualitative_text = models.TextField(blank=True)  # NEW: Qualitative input for LP6
-    lp6_qualitative_visible = models.BooleanField(default=False)  # NEW: Visibility flag for LP6
+    lp6_qualitative_text = models.TextField(blank=True)
+    lp6_qualitative_visible = models.BooleanField(default=False)
     lp7_case_tracking = models.CharField(max_length=30, blank=True)
     lp8_notice_communication = models.CharField(max_length=30, blank=True)
-    lp8_qualitative_text = models.TextField(blank=True)  # NEW: Qualitative input for LP8
-    lp8_qualitative_visible = models.BooleanField(default=False)  # NEW: Visibility flag for LP8
+    lp8_qualitative_text = models.TextField(blank=True)
+    lp8_qualitative_visible = models.BooleanField(default=False)
     lp9_law_accessibility = models.CharField(max_length=30, blank=True)
     lp10_law_change_impact = models.CharField(max_length=30, blank=True)
-    lp10_qualitative_text = models.TextField(blank=True)  # NEW: Qualitative input for LP10
-    lp10_qualitative_visible = models.BooleanField(default=False)  # NEW: Visibility flag for LP10
+    lp10_qualitative_text = models.TextField(blank=True)
+    lp10_qualitative_visible = models.BooleanField(default=False)
     lp11_adr_effectiveness = models.CharField(max_length=30, blank=True)
     lp12_dispute_transparency = models.CharField(max_length=30, blank=True)
     lp13_overall_satisfaction = models.CharField(max_length=30, blank=True)
-    final_feedback = models.TextField(blank=True)  # NEW: Final qualitative input (replaces lp13_feedback)
-    
+    final_feedback = models.TextField(blank=True)
+
     # Customs Agent Questions (CA1-CA13)
     ca1_training_received = models.CharField(max_length=50, blank=True)
     ca1a_training_usefulness = models.CharField(max_length=20, blank=True)
@@ -90,31 +83,68 @@ class SurveyResponse(models.Model):
     ca12_other_text = models.TextField(blank=True)
     ca13_biggest_challenge = models.CharField(max_length=50, blank=True)
     ca13_other_text = models.TextField(blank=True)
-    
+
     # Cross-System Perspectives (XS1-XS3)
     cross_system_answers = models.JSONField(default=dict, blank=True)
-    
+
     # Final Remarks
     final_remarks = models.TextField(blank=True)
-    
+
     # Metadata
     submission_date = models.DateTimeField(auto_now_add=True)
     reference_number = models.CharField(max_length=20, unique=True)
-    
+
     def __str__(self):
         return f"{self.full_name} - {self.reference_number}"
-    
+
     def save(self, *args, **kwargs):
         if not self.reference_number:
             self.reference_number = f"FBR{str(uuid.uuid4())[:8].upper()}"
         super().save(*args, **kwargs)
-    
+
+    # Display Methods for G1-G5
+    def get_g1_policy_impact_display(self):
+        mapping = {
+            'very_positive': 'Very Positive', 'positive': 'Positive', 'neutral': 'Neutral',
+            'negative': 'Negative', 'very_negative': 'Very Negative', 'na': 'N/A', 'dont_know': 'Don’t Know'
+        }
+        return {k: mapping.get(v, v) for k, v in (self.g1_policy_impact or {}).items()}
+
+    def get_g2_system_impact_display(self):
+        mapping = {
+            'very_positive': 'Very Positive', 'positive': 'Positive', 'neutral': 'Neutral',
+            'negative': 'Negative', 'very_negative': 'Very Negative', 'na': 'N/A', 'dont_know': 'Don’t Know'
+        }
+        return {k: mapping.get(v, v) for k, v in (self.g2_system_impact or {}).items()}
+
+    def get_g3_technical_issues_display(self):
+        mapping = {
+            'daily': 'Daily', 'weekly': 'Weekly', 'monthly': 'Monthly', 'rarely': 'Rarely',
+            'never': 'Never', 'dont_know': 'Don’t Know'
+        }
+        return mapping.get(self.g3_technical_issues, self.g3_technical_issues)
+
+    def get_g4_disruption_display(self):
+        mapping = {
+            'very_significantly': 'Very significantly', 'significantly': 'Significantly',
+            'minimally': 'Minimally', 'not_at_all': 'Not at all'
+        }
+        return mapping.get(self.g4_disruption, self.g4_disruption) if self.g4_disruption else ''
+
+    def get_g5_digital_literacy_display(self):
+        mapping = {
+            'very_significantly': 'Very significantly', 'significantly': 'Significantly', 'neutral': 'Neutral',
+            'minimally': 'Minimally', 'not_at_all': 'Not at all', 'dont_know': 'Don’t Know'
+        }
+        return mapping.get(self.g5_digital_literacy, self.g5_digital_literacy)
+
+    # Existing Display Methods (unchanged)
     def get_professional_role_display_name(self):
         return dict(self.PROFESSIONAL_CHOICES).get(self.professional_role, self.professional_role)
-    
+
     def get_province_display_name(self):
         return dict(self.PROVINCE_CHOICES).get(self.province, self.province)
-    
+
     def get_g4_challenged_groups_display(self):
         group_mapping = {
             'limited_tax_understanding': 'People with limited tax understanding',
@@ -129,7 +159,7 @@ class SurveyResponse(models.Model):
         if isinstance(self.g4_challenged_groups, list):
             return [group_mapping.get(group, group) for group in self.g4_challenged_groups]
         return []
-    
+
     def get_lp2_common_problems_display(self):
         problem_mapping = {
             'system_downtime': 'System downtime or slow performance',
@@ -145,7 +175,7 @@ class SurveyResponse(models.Model):
         if isinstance(self.lp2_common_problems, list):
             return [problem_mapping.get(problem, problem) for problem in self.lp2_common_problems]
         return []
-    
+
     def get_lp3_improvement_areas_display(self):
         area_mapping = {
             'system_stability': 'System stability and uptime',
@@ -160,7 +190,7 @@ class SurveyResponse(models.Model):
         if isinstance(self.lp3_improvement_areas, list):
             return [area_mapping.get(area, area) for area in self.lp3_improvement_areas]
         return []
-    
+
     def get_lp5_representation_challenges_display(self):
         challenge_mapping = {
             'commissioner_appeals': 'Appeal filings before Commissioner (Appeals)',
@@ -176,7 +206,7 @@ class SurveyResponse(models.Model):
         if isinstance(self.lp5_representation_challenges, list):
             return [challenge_mapping.get(challenge, challenge) for challenge in self.lp5_representation_challenges]
         return []
-    
+
     def get_ca4_procedure_challenges_display(self):
         challenge_mapping = {
             'goods_declaration': 'Goods declaration filing',
@@ -209,7 +239,7 @@ class SurveyResponse(models.Model):
         if isinstance(self.ca12_operational_challenges, list):
             return [challenge_mapping.get(challenge, challenge) for challenge in self.ca12_operational_challenges]
         return []
-    
+
     def get_cross_system_data(self):
         if isinstance(self.cross_system_answers, dict):
             return self.cross_system_answers
@@ -217,7 +247,7 @@ class SurveyResponse(models.Model):
             return json.loads(self.cross_system_answers) if self.cross_system_answers else {}
         except (json.JSONDecodeError, TypeError):
             return {}
-    
+
     def has_legal_answers(self):
         """Check if legal practitioner questions were answered"""
         return self.professional_role in ['legal', 'both'] and any([
@@ -234,22 +264,22 @@ class SurveyResponse(models.Model):
             self.lp5_representation_challenges,
             self.lp5_other_text,
             self.lp6_filing_efficiency,
-            self.lp6_qualitative_text,  # NEW
-            self.lp6_qualitative_visible,  # NEW
+            self.lp6_qualitative_text,
+            self.lp6_qualitative_visible,
             self.lp7_case_tracking,
             self.lp8_notice_communication,
-            self.lp8_qualitative_text,  # NEW
-            self.lp8_qualitative_visible,  # NEW
+            self.lp8_qualitative_text,
+            self.lp8_qualitative_visible,
             self.lp9_law_accessibility,
             self.lp10_law_change_impact,
-            self.lp10_qualitative_text,  # NEW
-            self.lp10_qualitative_visible,  # NEW
+            self.lp10_qualitative_text,
+            self.lp10_qualitative_visible,
             self.lp11_adr_effectiveness,
             self.lp12_dispute_transparency,
             self.lp13_overall_satisfaction,
-            self.final_feedback  # NEW: Replaces lp13_feedback
+            self.final_feedback
         ])
-    
+
     @property
     def has_customs_answers(self):
         """Check if customs agent questions were answered"""
@@ -269,13 +299,13 @@ class SurveyResponse(models.Model):
             self.ca12_operational_challenges,
             self.ca13_biggest_challenge
         ])
-    
+
     @property
     def has_cross_system_answers(self):
         """Check if cross-system perspectives were provided"""
         cross_data = self.get_cross_system_data()
         return bool(cross_data and not cross_data.get('skipped'))
-    
+
     class Meta:
         verbose_name = "Survey Response"
         verbose_name_plural = "Survey Responses"

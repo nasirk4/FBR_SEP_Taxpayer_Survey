@@ -44,11 +44,11 @@
 
 .radio-item input:checked:not([disabled]) + label,
 .checkbox-item input:checked:not([disabled]) + label {
-    background-color: #e6f3e9;
-    border-color: var(--fbr-green);
+    background-color: #e6f0fa;
+    border-color: var(--fbr-blue);
     font-weight: 600;
-    color: #1a5a2e;
-    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3);
+    color: #003087;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
 }
 
 .radio-item input:checked:not([disabled]) ~ label,
@@ -57,15 +57,14 @@
     color: #1f2937;
 }
 
-/* Accessibility: Hide checkmark from screen readers, use ARIA for checked state */
 .radio-item input:checked:not([disabled]) + label::before,
 .checkbox-item input:checked:not([disabled]) + label::before {
     content: '✓';
-    color: var(--fbr-green);
+    color: var(--fbr-blue);
     font-weight: 900;
     margin-right: 0.5rem;
     font-size: 1.1em;
-    speak: none; /* Prevent screen readers from reading the checkmark */
+    speak-as: none;
 }
 
 .question-card {
@@ -152,12 +151,12 @@
 }
 
 .btn-next {
-    background-color: var(--fbr-green);
+    background-color: var(--fbr-blue);
     color: white;
 }
 
 .btn-next:hover {
-    background-color: #218838;
+    background-color: #0056b3;
 }
 
 @media (max-width: 480px) {
@@ -196,11 +195,72 @@
     border: 1px solid #f09595;
     color: #800000;
     padding: 0.5rem;
-    margin-top: 0.5rem; /* Reduced margin for better spacing */
+    margin-top: 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.9rem;
     font-weight: 500;
     animation: fadeIn 0.3s ease-in;
+}
+
+.matrix-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.matrix-table th, .matrix-table td {
+    padding: 0.75rem;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+}
+
+.matrix-table th:first-child, .matrix-table td:first-child {
+    text-align: left;
+    width: 30%;
+}
+
+.matrix-table th:not(:first-child), .matrix-table td:not(:first-child) {
+    width: 10%;
+}
+
+.matrix-table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.matrix-table td:hover {
+    background-color: #f0f4f8;
+}
+
+.matrix-table .radio-item {
+    display: block;
+    border: none;
+    background: none;
+    padding: 0;
+    min-height: auto;
+}
+
+.matrix-table .radio-item input:checked:not([disabled]) + label {
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+.matrix-table .radio-item input:checked:not([disabled]) + label::before {
+    content: '✓';
+    color: var(--fbr-blue);
+    font-weight: 900;
+    margin-right: 0;
+}
+
+@media (max-width: 768px) {
+    .matrix-table {
+        display: block;
+        overflow-x: auto;
+    }
 }
 
 @keyframes fadeIn {
