@@ -33,36 +33,35 @@
         <!-- G1: Policy Impact Matrix -->
         <div class="question-card">
             <div class="question-text">G1. In the last 12 months, to what extent have FBR policy and legal reforms affected the following aspects of your practice?</div>
-            <table class="table table-bordered matrix-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Aspect</th>
-                        <th scope="col">Very Positive</th>
-                        <th scope="col">Positive</th>
-                        <th scope="col">Neutral</th>
-                        <th scope="col">Negative</th>
-                        <th scope="col">Very Negative</th>
-                        <th scope="col">N/A</th>
-                        <th scope="col">Don't Know</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for aspect, name in g1_aspects %}
-                    <tr>
-                        <td>{{ name }}</td>
-                        {% for value, label in g1_matrix_options %}
-                        <td>
-                            <div class="radio-item">
+            <div class="matrix-table-container">
+                <table class="table table-bordered matrix-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Aspect</th>
+                            <th scope="col">Very Positive</th>
+                            <th scope="col">Positive</th>
+                            <th scope="col">Neutral</th>
+                            <th scope="col">Negative</th>
+                            <th scope="col">Very Negative</th>
+                            <th scope="col">N/A</th>
+                            <th scope="col">Don't Know</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aspect, name in g1_aspects %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            {% for value, label in g1_matrix_options %}
+                            <td>
                                 <input type="radio" id="g1_{{ aspect }}_{{ value }}" name="g1_{{ aspect }}" value="{{ value }}" required
-                                       aria-required="true">
-                                <label for="g1_{{ aspect }}_{{ value }}">{{ label }}</label>
-                            </div>
-                        </td>
+                                    aria-required="true">
+                            </td>
+                            {% endfor %}
+                        </tr>
                         {% endfor %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
             <div id="g1_error_inline" class="validation-error-inline" style="display: none;" role="alert">
                 ⚠️ Please select an option for each aspect in G1.
             </div>
@@ -71,36 +70,35 @@
         <!-- G2: System Impact Matrix -->
         <div class="question-card">
             <div class="question-text">G2. In the last 12 months, to what extent have FBR digital system changes (e.g., IRIS, WeBOC, PSW) affected the following aspects of your practice?</div>
-            <table class="table table-bordered matrix-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Aspect</th>
-                        <th scope="col">Very Positive</th>
-                        <th scope="col">Positive</th>
-                        <th scope="col">Neutral</th>
-                        <th scope="col">Negative</th>
-                        <th scope="col">Very Negative</th>
-                        <th scope="col">N/A</th>
-                        <th scope="col">Don't Know</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for aspect, name in g2_aspects %}
-                    <tr>
-                        <td>{{ name }}</td>
-                        {% for value, label in g2_matrix_options %}
-                        <td>
-                            <div class="radio-item">
+            <div class="matrix-table-container">
+                <table class="table table-bordered matrix-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Aspect</th>
+                            <th scope="col">Very Positive</th>
+                            <th scope="col">Positive</th>
+                            <th scope="col">Neutral</th>
+                            <th scope="col">Negative</th>
+                            <th scope="col">Very Negative</th>
+                            <th scope="col">N/A</th>
+                            <th scope="col">Don't Know</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aspect, name in g2_aspects %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            {% for value, label in g2_matrix_options %}
+                            <td>
                                 <input type="radio" id="g2_{{ aspect }}_{{ value }}" name="g2_{{ aspect }}" value="{{ value }}" required
                                        aria-required="true">
-                                <label for="g2_{{ aspect }}_{{ value }}">{{ label }}</label>
-                            </div>
-                        </td>
+                            </td>
+                            {% endfor %}
+                        </tr>
                         {% endfor %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
             <div id="g2_error_inline" class="validation-error-inline" style="display: none;" role="alert">
                 ⚠️ Please select an option for each aspect in G2.
             </div>

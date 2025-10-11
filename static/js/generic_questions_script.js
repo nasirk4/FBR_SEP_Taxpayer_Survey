@@ -65,60 +65,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     toggleG4Section(); // Initialize on load
 
-    // Create Bootstrap confirmation modal (but don't show it yet)
-    const isBootstrap5 = typeof bootstrap !== 'undefined' && bootstrap.Modal && bootstrap.Modal.VERSION && bootstrap.Modal.VERSION.startsWith('5');
-    
-    const modalHtml = isBootstrap5 ? `
-        <div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="confirmSubmitModalLabel">Confirm Submission</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        Are you sure you want to submit your responses and proceed to the next section?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-back" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-next" id="confirmSubmitBtn">Yes, Continue</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    ` : `
-        <div class="modal fade" id="confirmSubmitModal" tabindex="-1" role="dialog" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="confirmSubmitModalLabel">Confirm Submission</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        Are you sure you want to submit your responses and proceed to the next section?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-back" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-next" id="confirmSubmitBtn">Yes, Continue</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Only insert modal if it doesn't exist
-    if (!document.getElementById('confirmSubmitModal')) {
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-
     // Form validation and submission
     const form = document.getElementById('genericQuestionsForm');
     if (form) {
         form.addEventListener('submit', function (e) {
-            e.preventDefault(); // Prevent default submission
-            
+            // Don't prevent default submission - let it submit normally after validation
             let isValid = true;
             const errorMessages = [];
 
@@ -235,6 +186,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (!isValid) {
+                // Prevent form submission and show errors
+                e.preventDefault();
+                
                 // Show errors and scroll to first error
                 const firstError = document.querySelector('.validation-error-inline[style*="display: block"]');
                 if (firstError) {
@@ -252,33 +206,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     errorBox.setAttribute('aria-live', 'assertive');
                     setTimeout(() => errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
                 }
-            } else {
-                // All validations passed - show confirmation modal
-                const modalElement = document.getElementById('confirmSubmitModal');
-                if (modalElement) {
-                    // Remove any existing event listeners to prevent duplicates
-                    const oldConfirmBtn = document.getElementById('confirmSubmitBtn');
-                    const newConfirmBtn = oldConfirmBtn.cloneNode(true);
-                    oldConfirmBtn.parentNode.replaceChild(newConfirmBtn, oldConfirmBtn);
-                    
-                    // Create new modal instance
-                    const modal = new bootstrap.Modal(modalElement);
-                    
-                    // Set up confirm button handler
-                    document.getElementById('confirmSubmitBtn').onclick = function () {
-                        modal.hide();
-                        // Remove the submit event listener to prevent infinite loop
-                        form.removeEventListener('submit', arguments.callee);
-                        form.submit(); // Proceed with actual form submission
-                    };
-                    
-                    // Show the modal
-                    modal.show();
-                } else {
-                    // If modal fails, submit directly
-                    form.submit();
-                }
             }
+            // If valid, let the form submit normally - no modal interruption
         });
     }
 });

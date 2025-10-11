@@ -11,11 +11,11 @@ def get_generic_questions_context():
     """Return standardized context for generic questions form options."""
     matrix_options = [
         ('very_positive', 'Very Positive'), ('positive', 'Positive'), ('neutral', 'Neutral'),
-        ('negative', 'Negative'), ('very_negative', 'Very Negative'), ('na', 'N/A'), ('dont_know', 'Don\'t Know')
+        ('negative', 'Negative'), ('very_negative', 'Very Negative'), ('na', 'N/A'), ('dont_know', 'Don’t Know')
     ]
     g3_options = [
         ('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly'),
-        ('rarely', 'Rarely'), ('never', 'Never'), ('dont_know', 'Don\'t Know')
+        ('rarely', 'Rarely'), ('never', 'Never'), ('dont_know', 'Don’t Know')
     ]
     g4_options = [
         ('very_significantly', 'Very significantly'), ('significantly', 'Significantly'),
@@ -23,7 +23,7 @@ def get_generic_questions_context():
     ]
     g5_options = [
         ('very_significantly', 'Very significantly'), ('significantly', 'Significantly'), ('neutral', 'Neutral'),
-        ('minimally', 'Minimally'), ('not_at_all', 'Not at all'), ('dont_know', 'Don\'t Know')
+        ('minimally', 'Minimally'), ('not_at_all', 'Not at all'), ('dont_know', 'Don’t Know')
     ]
     g1_aspects = [
         ('service_delivery', 'Service delivery efficiency'),
@@ -36,10 +36,6 @@ def get_generic_questions_context():
         ('service_delivery', 'Service delivery'),
         ('client_numbers', 'Client numbers')
     ]
-    
-    # Add lists for template conditions
-    g3_show_g4_values = ['daily', 'weekly', 'monthly', 'rarely']
-    
     context = {
         'g1_matrix_options': matrix_options,
         'g2_matrix_options': matrix_options,
@@ -48,7 +44,7 @@ def get_generic_questions_context():
         'g5_options': g5_options,
         'g1_aspects': g1_aspects,
         'g2_aspects': g2_aspects,
-        'g3_show_g4_values': g3_show_g4_values,
+        'g3_values_requiring_g4': ['daily', 'weekly', 'monthly', 'rarely'],  # Added for G4 skip logic
         'valid_options': {
             'g1': [opt[0] for opt in matrix_options],
             'g2': [opt[0] for opt in matrix_options],
@@ -58,7 +54,6 @@ def get_generic_questions_context():
         }
     }
     return context
-
 
 def validate_generic_questions_form(request, context_data):
     """Validate generic questions form data."""
@@ -96,12 +91,12 @@ def validate_generic_questions_form(request, context_data):
 
         # G4: Disruption (conditional)
         g4_value = request.POST.get('g4_disruption', '').strip()
-        if g3_value in ['daily', 'weekly', 'monthly', 'rarely']:
+        if g3_value in context_data['g3_values_requiring_g4']:
             if not g4_value:
                 errors.append("Please select an option for G4 Disruption")
             elif g4_value not in context_data['valid_options']['g4_disruption']:
                 errors.append("Invalid value for G4 Disruption")
-        generic_answers['g4_disruption'] = g4_value if g3_value in ['daily', 'weekly', 'monthly', 'rarely'] else ''
+        generic_answers['g4_disruption'] = g4_value if g3_value in context_data['g3_values_requiring_g4'] else ''
 
         # G5: Digital Literacy
         g5_value = request.POST.get('g5_digital_literacy', '').strip()
