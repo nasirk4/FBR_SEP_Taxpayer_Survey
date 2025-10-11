@@ -24,12 +24,25 @@ def get_generic_questions_context():
         ('very_significantly', 'Very significantly'), ('significantly', 'Significantly'), ('neutral', 'Neutral'),
         ('minimally', 'Minimally'), ('not_at_all', 'Not at all'), ('dont_know', 'Don’t Know')
     ]
+    g1_aspects = [
+        ('service_delivery', 'Service delivery efficiency'),
+        ('client_numbers', 'Client numbers'),
+        ('revenue_fees', 'Revenue/fees'),
+        ('compliance_burden', 'Compliance burden')
+    ]
+    g2_aspects = [
+        ('workflow_efficiency', 'Workflow efficiency'),
+        ('service_delivery', 'Service delivery'),
+        ('client_numbers', 'Client numbers')
+    ]
     context = {
         'g1_matrix_options': matrix_options,
         'g2_matrix_options': matrix_options,
         'g3_options': g3_options,
         'g4_options': g4_options,
         'g5_options': g5_options,
+        'g1_aspects': g1_aspects,
+        'g2_aspects': g2_aspects,
         'valid_options': {
             'g1': [opt[0] for opt in matrix_options],
             'g2': [opt[0] for opt in matrix_options],
@@ -39,6 +52,7 @@ def get_generic_questions_context():
         }
     }
     return context
+
 
 def validate_generic_questions_form(request, context_data):
     """Validate generic questions form data."""

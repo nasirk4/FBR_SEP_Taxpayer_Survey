@@ -1,4 +1,3 @@
-<!-- templates/survey/Generic_Questions.html -->
 {% extends "survey/base.html" %}
 {% load static %}
 
@@ -46,10 +45,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for aspect, name in [('service_delivery', 'Service delivery efficiency'), ('client_numbers', 'Client numbers'), ('revenue_fees', 'Revenue/fees'), ('compliance_burden', 'Compliance burden')] %}
+                    {% for aspect, name in g1_aspects %}
                     <tr>
                         <td>{{ name }}</td>
-                        {% for value, label in [('very_positive', 'Very Positive'), ('positive', 'Positive'), ('neutral', 'Neutral'), ('negative', 'Negative'), ('very_negative', 'Very Negative'), ('na', 'N/A'), ('dont_know', 'Don’t Know')] %}
+                        {% for value, label in g1_matrix_options %}
                         <td>
                             <div class="radio-item">
                                 <input type="radio" id="g1_{{ aspect }}_{{ value }}" name="g1_{{ aspect }}" value="{{ value }}" required
@@ -85,10 +84,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for aspect, name in [('workflow_efficiency', 'Workflow efficiency'), ('service_delivery', 'Service delivery efficiency'), ('client_numbers', 'Client numbers')] %}
+                    {% for aspect, name in g2_aspects %}
                     <tr>
                         <td>{{ name }}</td>
-                        {% for value, label in [('very_positive', 'Very Positive'), ('positive', 'Positive'), ('neutral', 'Neutral'), ('negative', 'Negative'), ('very_negative', 'Very Negative'), ('na', 'N/A'), ('dont_know', 'Don’t Know')] %}
+                        {% for value, label in g2_matrix_options %}
                         <td>
                             <div class="radio-item">
                                 <input type="radio" id="g2_{{ aspect }}_{{ value }}" name="g2_{{ aspect }}" value="{{ value }}" required
@@ -111,7 +110,7 @@
         <div class="question-card">
             <div class="question-text">G3. In the last 12 months, how often have you encountered technical issues with FBR digital platforms (e.g., system downtime, errors)?</div>
             <div class="radio-group compact">
-                {% for value, label in [('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly'), ('rarely', 'Rarely'), ('never', 'Never'), ('dont_know', 'Don’t Know')] %}
+                {% for value, label in g3_options %}
                 <div class="radio-item">
                     <input type="radio" id="g3_{{ value }}" name="g3_technical_issues" value="{{ value }}" required
                            {% if generic_answers.g3_technical_issues == value %}checked{% endif %}
@@ -130,7 +129,7 @@
              {% if generic_answers.g3_technical_issues not in ['daily', 'weekly', 'monthly', 'rarely'] %}style="display: none;"{% endif %}>
             <div class="question-text">G4. Thinking about the technical issues you encountered, how significantly did they disrupt your operations?</div>
             <div class="radio-group compact">
-                {% for value, label in [('very_significantly', 'Very significantly'), ('significantly', 'Significantly'), ('minimally', 'Minimally'), ('not_at_all', 'Not at all')] %}
+                {% for value, label in g4_options %}
                 <div class="radio-item">
                     <input type="radio" id="g4_{{ value }}" name="g4_disruption" value="{{ value }}"
                            {% if generic_answers.g4_disruption == value %}checked{% endif %}
@@ -149,7 +148,7 @@
         <div class="question-card">
             <div class="question-text">G5. In the last 12 months, to what extent have FBR digitization efforts increased your need for digital literacy training for your staff?</div>
             <div class="radio-group compact">
-                {% for value, label in [('very_significantly', 'Very significantly'), ('significantly', 'Significantly'), ('neutral', 'Neutral'), ('minimally', 'Minimally'), ('not_at_all', 'Not at all'), ('dont_know', 'Don’t Know')] %}
+                {% for value, label in g5_options %}
                 <div class="radio-item">
                     <input type="radio" id="g5_{{ value }}" name="g5_digital_literacy" value="{{ value }}" required
                            {% if generic_answers.g5_digital_literacy == value %}checked{% endif %}
