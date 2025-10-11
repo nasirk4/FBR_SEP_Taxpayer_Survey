@@ -11,7 +11,40 @@ html, body {
     overflow-x: hidden;
 }
 
-/* --- Dropdown Styles (Adjusted to remove borders) --- */
+/* --- Form Control Normalization --- */
+.form-control {
+    font-size: 16px;
+    padding: 10px 12px; /* Adjusted for exact height */
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    height: 44px; /* Explicit height for all fields */
+    line-height: 1.5;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* --- Province Select Specific Styling --- */
+select.form-control {
+    background: white url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>") no-repeat right 12px center;
+    background-size: 14px;
+    cursor: pointer;
+    padding-right: 36px; /* Space for arrow */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Mimic .custom-dropdown shadow */
+}
+
+/* Style select options (limited support) */
+select.form-control option {
+    font-size: 16px;
+    padding: 14px 12px;
+    background: white;
+    color: #333;
+    border-bottom: 1px solid #f0f0f0; /* Limited support */
+}
+
+/* --- District Dropdown --- */
 .dropdown-container {
     position: relative;
     width: 100%;
@@ -31,7 +64,7 @@ html, body {
     max-height: 200px;
     z-index: 1000;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
 }
 
 .dropdown-option {
@@ -39,12 +72,13 @@ html, body {
     min-height: 44px;
     display: flex;
     align-items: center;
-    border-bottom: none; /* REMOVED BORDER */
     cursor: pointer;
     transition: background-color 0.2s ease;
-    -webkit-tap-highlight-color: rgba(0,0,0,0.1); /* Touch feedback */
+    -webkit-tap-highlight-color: rgba(0,0,0,0.1);
     -webkit-user-select: none;
     user-select: none;
+    font-size: 16px;
+    color: #333;
 }
 
 .dropdown-option:not(:last-child) {
@@ -65,7 +99,7 @@ html, body {
     color: #666;
 }
 
-/* NEW: Professional Role Error Styling */
+/* --- Remaining styles unchanged --- */
 .role-error {
     color: var(--fbr-red);
     font-size: 14px;
@@ -87,21 +121,6 @@ html, body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Prevent iOS zoom on inputs */
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-select,
-.form-control {
-    font-size: 16px; /* Prevents zoom on focus in iOS */
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* --- Basic Information Grid (Managed by .form-grid-wrapper) --- */
 .form-grid-wrapper {
     display: grid;
     grid-template-columns: 1fr;
@@ -263,16 +282,16 @@ select,
 }
 
 .btn-next {
-    background-color: var(--fbr-green);
+    background-color: var(--fbr-blue);
     color: white;
-    border: 1px solid var(--fbr-green);
+    border: 1px solid var(--fbr-blue);
     font-weight: 600;
     transition: background-color 0.2s ease, transform 0.1s;
 }
 
 .btn-next:hover:not(:disabled) {
-    background-color: #1e7e34;
-    border-color: #1e7e34;
+    background-color: #0056b3;
+    border-color: #0056b3;
 }
 
 .btn-back {

@@ -8,12 +8,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const roleError = document.getElementById('roleError');
     const isMobile = window.innerWidth <= 767;
 
+    // --- Province Dropdown Elements ---
+    const provinceSearch = document.getElementById('province_search');
+    const provinceDropdown = document.getElementById('province_dropdown');
+    const finalProvince = document.getElementById('final_province');
+    const provinceOptions = provinceDropdown.querySelectorAll('.dropdown-option');
+    const provinceSelect = document.getElementById('province');
+    
     // --- District Dropdown Elements ---
     const searchInput = document.getElementById('district_search');
     const dropdown = document.getElementById('district_dropdown');
     const customInput = document.getElementById('custom_district');
     const finalDistrict = document.getElementById('final_district');
-    const provinceSelect = document.getElementById('province');
     const dropdownOptions = dropdown.querySelectorAll('.dropdown-option');
 
     // --- Professional Role Elements ---
@@ -84,7 +90,43 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initial setup for experience sections
     updateRoleSelection();
 
-    // --- District Dropdown Logic ---
+    // Province Dropdown Logic
+    provinceSearch.addEventListener('focus', function () {
+        filterProvinces();
+        provinceDropdown.style.display = 'block';
+        if (isMobile) document.body.classList.add('dropdown-open');
+    })
+
+    provinceSearch.addEventListener('input', function () {
+        filterProvinces();
+        provinceDropdown.style.display = 'block';
+    });
+    provinceOptions.forEach(option => {
+        option.addEventListener('click', function () {
+            provinceSearch.value = this.textContent;
+            finalProvince.value = this.dataset.value;
+            provinceOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            provinceDropdown.style.display = 'none';
+            if (isMobile) document.body.classList.remove('dropdown-open');
+            // Reset district fields and filter
+            districtSearch.value = '';
+            finalDistrict.value = '';
+            customInput.style.display = 'none';
+            customInput.required = false;
+            filterDistricts();
+        });
+    });
+    function filterProvinces() {
+        const query = provinceSearch.value.toLowerCase();
+        provinceOptions.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            option.style.display = text.includes(query) ? 'block' : 'none';
+        });
+    }
+
+
+    // -- District Dropdown Logic ---
     // Show dropdown when search input is focused or has value
     searchInput.addEventListener('focus', function() {
         filterDistricts();
@@ -152,17 +194,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // Filter function
     function filterDistricts() {
         const query = searchInput.value.toLowerCase();
-        const selectedProvince = provinceSelect.value;
+        const selectedProvince = finalProvince.value;
         let hasVisibleOptions = false;
 
-        dropdownOptions.forEach(option => {
+        districtOptions.forEach(option => {
             const text = option.textContent.toLowerCase();
             const isCustomOption = option.classList.contains('custom-option');
             const optionProvince = option.dataset.province;
 
-            if (isCustomOption) {
-                option.style.display = selectedProvince ? 'block' : 'none';
-            } else if (text.includes(query) && (!selectedProvince || optionProvince === selectedProvince)) {
+            if (isCustomOption && selectedProvince) {
+                option.style.display = 'block';
+            } else if (selectedProvince && optionProvince !== selectedProvince) {
+                option.style.display = 'none';
+            } else if (text.includes(query)) {
                 option.style.display = 'block';
                 hasVisibleOptions = true;
             } else {
@@ -170,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        const customOption = dropdown.querySelector('.custom-option');
+        const customOption = districtDropdown.querySelector('.custom-option');
         if (query && !hasVisibleOptions && selectedProvince) {
             customOption.style.display = 'block';
         } else if (query && hasVisibleOptions && selectedProvince) {

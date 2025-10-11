@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from httpcore import request
 from survey.utils.progress import get_progress_context
 from survey.utils.session_utils import sanitize_input, validate_session_size
 import re
@@ -11,7 +12,18 @@ def respondent_info_view(request):
     if not request.session.get('survey_started'):
         return redirect('survey:welcome')
 
-    # Province-district mapping
+    # --- Province and District Data Definitions (CORRECT PLACEMENT) ---
+    provinces = [
+        ('ajk', 'Azad Jammu and Kashmir'),
+        ('balochistan', 'Balochistan'),
+        ('gb', 'Gilgit-Baltistan'),
+        ('ict', 'ICT'),
+        ('kpk', 'Khyber Pakhtunkhwa'),
+        ('punjab', 'Punjab'),
+        ('sindh', 'Sindh'),
+    ]
+    
+    # Province-district list
     districts = [
         # AJK
         ('Bagh', 'ajk'), ('Bhimber', 'ajk'), ('Haveli', 'ajk'), ('Jhelum Valley (Hattian)', 'ajk'),
@@ -65,14 +77,23 @@ def respondent_info_view(request):
         # ICT
         ('ICT', 'ict')
     ]
-
+    
     province_district_map = {d[0]: d[1] for d in districts}
     email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    
+    # Initial context definition for GET request
+    # This must be defined *after* 'provinces' and 'districts'
+    context = { 
+        'provinces': provinces, 
+        'districts': districts, 
+        'respondent_info': request.session.get('respondent_info', {}) 
+    }
 
     if request.method == 'POST':
         errors = []
 
         # --- Extraction ---
+        # ... (POST extraction code remains the same)
         full_name = request.POST.get('full_name', '').strip()
         email = request.POST.get('email', '').strip()
         mobile = request.POST.get('mobile', '').strip()
@@ -86,6 +107,7 @@ def respondent_info_view(request):
         kii_consent = request.POST.get('kii_consent', '').strip()
 
         # --- Validation ---
+        # ... (Validation code remains the same)
         if not full_name or len(full_name) > 255:
             errors.append("Full name is required and must be 255 characters or less")
         if not email or not re.match(email_regex, email):
@@ -117,8 +139,10 @@ def respondent_info_view(request):
 
         if errors:
             logger.warning(f"Validation errors in respondent_info: {errors}")
+            # Context for error case needs to be re-built
             context = get_progress_context(current_step=2)
             context.update({
+                'provinces': provinces, # Ensure provinces is still available
                 'districts': districts,
                 'error': "Please correct the following errors:\n" + "\n".join(errors),
                 'respondent_info': request.POST
@@ -126,6 +150,7 @@ def respondent_info_view(request):
             return render(request, 'survey/respondent_info.html', context)
 
         # --- Saving to Session ---
+        # ... (Session saving code remains the same)
         validate_session_size(request)
         request.session['respondent_info'] = {
             'full_name': sanitize_input(full_name),
@@ -143,8 +168,8 @@ def respondent_info_view(request):
         return redirect('survey:generic_questions')
 
     # --- GET Request ---
-    context = get_progress_context(current_step=2, total_steps=6)
+    # The context built at the top is sufficient for a GET request
+    context.update(get_progress_context(current_step=2, total_steps=6))
     logger.debug(f"DEBUG: get_progress_context returned: {context}")
-    context['districts'] = districts
-    context['respondent_info'] = request.session.get('respondent_info', {})
+    # The 'districts' and 'respondent_info' are already in the context from the top definition
     return render(request, 'survey/respondent_info.html', context)
