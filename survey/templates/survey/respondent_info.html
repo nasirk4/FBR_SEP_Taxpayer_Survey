@@ -49,7 +49,7 @@
                 <div class="dropdown-container">
                     <input type="text" id="province_search" class="form-control"
                         placeholder="Type to search provinces..." autocomplete="off" required
-                        value="{{ request.session.respondent_info.province_display|default:'' }}">
+                        value="{{ respondent_info.province_display|default:'' }}">
                     <div id="province_dropdown" class="custom-dropdown">
                         {% for value, display in provinces %}
                             <div class="dropdown-option" data-value="{{ value }}">{{ display }}</div>

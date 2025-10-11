@@ -20,8 +20,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const customInput = document.getElementById('custom_district');
     const finalDistrict = document.getElementById('final_district');
     const dropdownOptions = dropdown.querySelectorAll('.dropdown-option');
-    
-    // FIX: Added missing districtOptions variable
     const districtOptions = dropdown.querySelectorAll('.dropdown-option');
 
     // --- Professional Role Elements ---
@@ -33,10 +31,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const legalExpRadios = document.querySelectorAll('input[name="experience_legal"]');
     const customsExpRadios = document.querySelectorAll('input[name="experience_customs"]');
 
+    // Track dropdown state to prevent immediate closing
+    let isDropdownInteraction = false;
+
     /**
      * Toggles the visibility and 'required' status for experience sections.
-     * @param {HTMLElement} section The experience section div.
-     * @param {boolean} isVisible Whether the section should be visible/required.
      */
     function toggleExperienceSection(section, isVisible) {
         if (!section) return;
@@ -51,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /**
      * Updates the hidden 'professional_role_combined' field based on selected checkboxes.
-     * Hides/shows the corresponding experience sections.
      */
     function updateRoleSelection() {
         const legalChecked = legalCheckbox.checked;
@@ -66,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /**
      * Validates that at least one professional role is selected.
-     * @returns {boolean} True if validation passes.
      */
     function validateProfessionalRole() {
         if (!legalCheckbox.checked && !customsCheckbox.checked) {
@@ -91,22 +88,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initial setup for experience sections
     updateRoleSelection();
-
-    // --- Province Dropdown Logic - COMPLETELY REWRITTEN ---
-    provinceSearch.addEventListener('focus', function () {
-        // Clear the search and show ALL provinces when focused
-        provinceSearch.value = '';
-        showAllProvinces();
-        provinceDropdown.style.display = 'block';
+    
+    // --- Improved Dropdown Functions ---
+    
+    /**
+     * Show dropdown on click (not just focus)
+     */
+    function showDropdown(dropdownElement, searchElement) {
+        dropdownElement.style.display = 'block';
         if (isMobile) document.body.classList.add('dropdown-open');
+        
+        // Mark as dropdown interaction to prevent immediate closing
+        isDropdownInteraction = true;
+        setTimeout(() => { isDropdownInteraction = false; }, 100);
+    }
+
+    /**
+     * Hide dropdown
+     */
+    function hideDropdown(dropdownElement) {
+        dropdownElement.style.display = 'none';
+        if (isMobile) document.body.classList.remove('dropdown-open');
+    }
+
+    // --- Province Dropdown Logic ---
+    
+    // Show dropdown on click (not just focus)
+    provinceSearch.addEventListener('click', function (e) {
+        e.stopPropagation();
+        showDropdown(provinceDropdown, provinceSearch);
+        showAllProvinces();
+    });
+
+    provinceSearch.addEventListener('focus', function () {
+        showDropdown(provinceDropdown, provinceSearch);
+        showAllProvinces();
     });
 
     provinceSearch.addEventListener('input', function () {
         filterProvinces();
-        provinceDropdown.style.display = 'block';
+        showDropdown(provinceDropdown, provinceSearch);
     });
 
     provinceOptions.forEach(option => {
+        option.addEventListener('mousedown', function (e) {
+            e.preventDefault(); // Prevent input blur
+        });
+        
         option.addEventListener('click', function () {
             const selectedText = this.textContent;
             const selectedValue = this.dataset.value;
@@ -118,8 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
             provinceOptions.forEach(opt => opt.classList.remove('selected'));
             this.classList.add('selected');
             
-            provinceDropdown.style.display = 'none';
-            if (isMobile) document.body.classList.remove('dropdown-open');
+            hideDropdown(provinceDropdown);
             
             // Reset and filter districts based on new province
             searchInput.value = '';
@@ -145,46 +172,33 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Allow clearing province selection by backspacing or deleting
-    provinceSearch.addEventListener('keydown', function(e) {
-        if ((e.key === 'Backspace' || e.key === 'Delete') && provinceSearch.value === '') {
-            finalProvince.value = '';
-            provinceOptions.forEach(opt => opt.classList.remove('selected'));
-            // Reset districts when province is cleared
-            searchInput.value = '';
-            finalDistrict.value = '';
-            customInput.style.display = 'none';
-            customInput.required = false;
-            filterDistricts();
-        }
+    // --- District Dropdown Logic ---
+    
+    // Show dropdown on click (not just focus)
+    searchInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+        showDropdown(dropdown, searchInput);
+        filterDistricts();
     });
 
-    // --- District Dropdown Logic ---
     searchInput.addEventListener('focus', function() {
+        showDropdown(dropdown, searchInput);
         filterDistricts();
-        dropdown.style.display = 'block';
-        if (isMobile) document.body.classList.add('dropdown-open');
     });
 
     searchInput.addEventListener('input', function() {
         filterDistricts();
-        dropdown.style.display = 'block';
+        showDropdown(dropdown, searchInput);
         customInput.style.display = 'none';
         customInput.required = false;
-    });
-
-    // Reset district when province changes
-    finalProvince.addEventListener('change', function() {
-        searchInput.value = '';
-        finalDistrict.value = '';
-        customInput.value = '';
-        customInput.style.display = 'none';
-        customInput.required = false;
-        filterDistricts();
     });
 
     // Handle selection from dropdown
     dropdownOptions.forEach(option => {
+        option.addEventListener('mousedown', function (e) {
+            e.preventDefault(); // Prevent input blur
+        });
+        
         option.addEventListener('click', function() {
             const value = this.dataset.value;
             dropdownOptions.forEach(opt => opt.classList.remove('selected'));
@@ -203,8 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 customInput.style.display = 'none';
                 customInput.required = false;
             }
-            dropdown.style.display = 'none';
-            if (isMobile) document.body.classList.remove('dropdown-open');
+            hideDropdown(dropdown);
         });
     });
 
@@ -214,27 +227,28 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.value = this.value;
     });
 
-    // --- Unified Click Outside Handler ---
+    // --- Improved Click Outside Handler ---
     document.addEventListener('click', function(e) {
+        // Don't close if it's a dropdown interaction
+        if (isDropdownInteraction) return;
+        
         // Check for province dropdown
         const isProvinceRelated = 
             provinceSearch.contains(e.target) || 
             provinceDropdown.contains(e.target);
         
         if (!isProvinceRelated) {
-            provinceDropdown.style.display = 'none';
+            hideDropdown(provinceDropdown);
         }
         
         // Check for district dropdown
         const isDistrictRelated = 
             searchInput.contains(e.target) || 
             dropdown.contains(e.target) || 
-            customInput.contains(e.target) ||
-            (e.target.classList && e.target.classList.contains('dropdown-option'));
+            customInput.contains(e.target);
         
         if (!isDistrictRelated) {
-            dropdown.style.display = 'none';
-            if (isMobile) document.body.classList.remove('dropdown-open');
+            hideDropdown(dropdown);
         }
     });
 
@@ -298,19 +312,39 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     })();
 
-    // --- Form Submission Validation ---
+    // --- Improved Form Submission Validation ---
     form.addEventListener('submit', function(e) {
         let isValid = true;
+        const errorMessages = [];
 
+        // Validate professional role
         if (!validateProfessionalRole()) {
             isValid = false;
-            roleError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            errorMessages.push('Please select at least one professional role');
         }
 
+        // Validate province
+        if (!finalProvince.value) {
+            isValid = false;
+            provinceSearch.style.borderColor = 'var(--fbr-red, #dc3545)';
+            errorMessages.push('Province is required');
+        }
+
+        // Validate district
+        if (!finalDistrict.value) {
+            isValid = false;
+            searchInput.style.borderColor = 'var(--fbr-red, #dc3545)';
+            errorMessages.push('District is required');
+        }
+
+        // Validate required fields
         const requiredFields = Array.from(form.querySelectorAll('[required]'));
         const invalidFields = requiredFields.filter(field => {
+            if (field.id === 'province_search' || field.id === 'district_search') {
+                // These are handled separately above
+                return false;
+            }
             if (!field.value.trim()) return true;
-            if (field.id === 'district_search' && !finalDistrict.value) return true;
             if (field.type === 'radio' && field.required) {
                 const radioName = field.name;
                 const radiosInGroup = form.querySelectorAll(`input[name="${radioName}"]`);
@@ -331,12 +365,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (container) container.style.borderColor = 'var(--fbr-red, #dc3545)';
                 }
             });
-            if (invalidFields[0]) {
-                invalidFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            if (isMobile) showMobileNotification('Please fill in all required fields');
+            errorMessages.push('Please fill in all required fields');
         }
 
+        // Handle practice areas
         const practiceAreaCheckboxes = form.querySelectorAll('input[name="practice_areas"]:checked');
         const practiceAreaValues = Array.from(practiceAreaCheckboxes).map(cb => cb.value);
         let hiddenPracticeAreaField = document.getElementById('hidden_practice_areas');
@@ -351,8 +383,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!isValid) {
             e.preventDefault();
+            
+            // Show error notification
+            if (errorMessages.length > 0) {
+                showMobileNotification(errorMessages.join(', '));
+            }
+            
+            // Scroll to first error
+            const firstErrorField = document.querySelector('[aria-invalid="true"]');
+            if (firstErrorField) {
+                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (roleError.classList.contains('show')) {
+                roleError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
             return false;
         }
+        
+        // If valid, allow form submission to proceed
+        console.log('Form validation passed, submitting...');
     });
 
     // Reset invalid state on input
@@ -365,6 +414,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const container = field.closest('.experience-section');
                 if (container) container.style.borderColor = '#eee';
             }
+        }
+        
+        // Reset province/district borders
+        if (field.id === 'province_search' || field === provinceSearch) {
+            provinceSearch.style.borderColor = '#ccc';
+        }
+        if (field.id === 'district_search' || field === searchInput) {
+            searchInput.style.borderColor = '#ccc';
         }
     });
 
