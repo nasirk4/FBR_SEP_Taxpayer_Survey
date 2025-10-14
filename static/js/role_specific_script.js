@@ -1,6 +1,47 @@
 // static/js/role_specific_script.js
+
 function handleBackNavigation(url) {
+    saveLP5Data(); // Save LP5 checkbox states before navigating
     window.location.href = url;
+}
+
+// Enhanced safe JSON parsing utility function
+function safeJsonParse(jsonString, defaultValue = {}) {
+    if (!jsonString || typeof jsonString !== 'string') {
+        return defaultValue;
+    }
+    
+    const cleaned = jsonString.trim();
+    
+    // Handle empty or malformed cases
+    if (!cleaned || cleaned === '{}' || cleaned === '[]' || cleaned === 'null' || cleaned === '""' || cleaned === '{') {
+        return defaultValue;
+    }
+    
+    try {
+        // First try direct JSON parse
+        return JSON.parse(cleaned);
+    } catch (error) {
+        console.warn('First JSON parse attempt failed, trying to clean Python-style JSON:', error);
+        
+        try {
+            // Clean Python-style JSON (True/False, single quotes)
+            let cleanedJson = cleaned
+                .replace(/'/g, '"')  // Replace single quotes with double quotes
+                .replace(/True/g, 'true')  // Replace Python True with JavaScript true
+                .replace(/False/g, 'false')  // Replace Python False with JavaScript false
+                .replace(/None/g, 'null');  // Replace Python None with JavaScript null
+            
+            // Remove any escape sequences that might have been added by Django
+            cleanedJson = cleanedJson.replace(/\\u0027/g, "'")
+                                    .replace(/\\u0022/g, '"');
+            
+            return JSON.parse(cleanedJson);
+        } catch (secondError) {
+            console.error('JSON parse error after cleaning:', secondError, 'for original string:', jsonString);
+            return defaultValue;
+        }
+    }
 }
 
 // Centralized error management
@@ -35,583 +76,254 @@ document.addEventListener('DOMContentLoaded', function () {
     const errorElements = {
         lp1: document.getElementById('lp1_error_inline'),
         lp2: document.getElementById('lp2_error_inline'),
-        lp2_other: document.getElementById('lp2_other_error_inline'),
         lp3: document.getElementById('lp3_error_inline'),
-        lp3_other: document.getElementById('lp3_other_error_inline'),
         lp4: document.getElementById('lp4_error_inline'),
         lp5: document.getElementById('lp5_error_inline'),
-        lp5_other: document.getElementById('lp5_other_error_inline'),
         lp6: document.getElementById('lp6_error_inline'),
-        lp6_qualitative: document.getElementById('lp6_qualitative_error_inline'),
-        lp7: document.getElementById('lp7_error_inline'),
-        lp8: document.getElementById('lp8_error_inline'),
-        lp8_qualitative: document.getElementById('lp8_qualitative_error_inline'),
-        lp9: document.getElementById('lp9_error_inline'),
-        lp10: document.getElementById('lp10_error_inline'),
-        lp10_qualitative: document.getElementById('lp10_qualitative_error_inline'),
-        lp11: document.getElementById('lp11_error_inline'),
-        lp12: document.getElementById('lp12_error_inline'),
-        lp13: document.getElementById('lp13_error_inline'),
         ca1: document.getElementById('ca1_error_inline'),
-        ca1a: document.getElementById('ca1a_error_inline'),
         ca2: document.getElementById('ca2_error_inline'),
         ca3: document.getElementById('ca3_error_inline'),
         ca4: document.getElementById('ca4_error_inline'),
-        ca4_other: document.getElementById('ca4_other_error_inline'),
         ca5: document.getElementById('ca5_error_inline'),
-        ca6: document.getElementById('ca6_error_inline'),
-        ca7: document.getElementById('ca7_error_inline'),
-        ca8: document.getElementById('ca8_error_inline'),
-        ca9: document.getElementById('ca9_error_inline'),
-        ca10: document.getElementById('ca10_error_inline'),
-        ca11: document.getElementById('ca11_error_inline'),
-        ca12: document.getElementById('ca12_error_inline'),
-        ca12_other: document.getElementById('ca12_other_error_inline'),
-        ca13: document.getElementById('ca13_error_inline'),
-        ca13_other: document.getElementById('ca13_other_error_inline')
+        ca6_challenge: document.getElementById('ca6_challenge_error_inline'),
+        ca6_improvement: document.getElementById('ca6_improvement_error_inline')
     };
+
+    // Reset invalid lp5_saved_data to prevent malformed JSON
+    // TODO: Backend should ensure lp5_tax_types_json is valid JSON (e.g., '{}' or '') to avoid this warning
+    const savedDataElement = document.getElementById('lp5_saved_data');
+    if (savedDataElement && savedDataElement.value === '{') {
+        console.warn('Invalid lp5_saved_data detected, resetting to empty string');
+        savedDataElement.value = '';
+    }
 
     // --- Legal Practitioner Logic ---
 
-    // LP1: Toggle LP2 visibility
-    function toggleLP2Section() {
-        const lp1Radios = document.querySelectorAll('input[name="lp1_technical_issues"]:checked');
-        const lp2Section = document.getElementById('lp2_section');
-        const showLP2 = lp1Radios.length > 0 && ['very_frequently', 'frequently'].includes(lp1Radios[0].value);
-
-        if (lp2Section) {
-            lp2Section.style.display = showLP2 ? 'block' : 'none';
-            if (!showLP2) {
-                document.querySelectorAll('input[name="lp2_common_problems"]').forEach(cb => cb.checked = false);
-                const lp2OtherText = document.getElementById('lp2_other_text');
-                if (lp2OtherText) lp2OtherText.value = '';
-                hideError('lp2');
-                hideError('lp2_other');
-            }
-        }
-    }
-
-    window.toggleLP2Other = function() {
-        const checkbox = document.getElementById('lp2_other');
-        const specifyDiv = document.getElementById('lp2_other_specify');
-        const textarea = document.getElementById('lp2_other_text');
-
-        if (checkbox && checkbox.checked) {
-            specifyDiv.style.display = 'block';
-        } else {
-            specifyDiv.style.display = 'none';
-            if (textarea) textarea.value = '';
-            hideError('lp2_other');
-        }
-    };
-
-    // LP3 Selection counter
-    function setupLP3Counter() {
-        const checkboxes = document.querySelectorAll('input[name="lp3_improvement_areas"]');
-        const counter = document.getElementById('lp3_counter');
-
-        function updateLP3Counter() {
-            const selected = document.querySelectorAll('input[name="lp3_improvement_areas"]:checked');
-            const maxSelections = 3;
-
-            if (counter) {
-                counter.textContent = selected.length;
-                counter.style.color = selected.length >= maxSelections ? '#dc3545' : '#666';
-            }
-
-            checkboxes.forEach(cb => {
-                if (selected.length >= maxSelections && !cb.checked) {
-                    cb.disabled = true;
-                    cb.parentElement.classList.add('disabled-input');
-                } else {
-                    cb.disabled = false;
-                    cb.parentElement.classList.remove('disabled-input');
-                }
-            });
-        }
-
-        if (checkboxes.length > 0) {
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function(e) {
-                    updateLP3Counter();
-                    if (e.target.value === 'other') toggleLP3Other();
-                });
-            });
-            updateLP3Counter();
-        }
-    }
-
-    window.toggleLP3Other = function() {
-        const checkbox = document.getElementById('lp3_other');
-        const specifyDiv = document.getElementById('lp3_other_specify');
-        const textarea = document.getElementById('lp3_other_text');
-
-        if (checkbox && checkbox.checked) {
-            specifyDiv.style.display = 'block';
-        } else {
-            specifyDiv.style.display = 'none';
-            if (textarea) textarea.value = '';
-            hideError('lp3_other');
-        }
-    };
-
-    // LP5 Selection counter
-    function setupLP5Counter() {
-        const checkboxes = document.querySelectorAll('input[name="lp5_representation_challenges"]');
-        const counter = document.getElementById('lp5_counter');
-
-        function updateLP5Counter() {
-            const selected = document.querySelectorAll('input[name="lp5_representation_challenges"]:checked');
-            const maxSelections = 3;
-
-            if (counter) {
-                counter.textContent = selected.length;
-                counter.style.color = selected.length >= maxSelections ? '#dc3545' : '#666';
-            }
-
-            checkboxes.forEach(cb => {
-                if (selected.length >= maxSelections && !cb.checked) {
-                    cb.disabled = true;
-                    cb.parentElement.classList.add('disabled-input');
-                } else {
-                    cb.disabled = false;
-                    cb.parentElement.classList.remove('disabled-input');
-                }
-            });
-        }
-
-        if (checkboxes.length > 0) {
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function(e) {
-                    updateLP5Counter();
-                    if (e.target.value === 'other') toggleLP5Other();
-                });
-            });
-            updateLP5Counter();
-        }
-    }
-
-    window.toggleLP5Other = function() {
-        const checkbox = document.getElementById('lp5_other');
-        const specifyDiv = document.getElementById('lp5_other_specify');
-        const textarea = document.getElementById('lp5_other_text');
-
-        if (checkbox && checkbox.checked) {
-            specifyDiv.style.display = 'block';
-        } else {
-            specifyDiv.style.display = 'none';
-            if (textarea) textarea.value = '';
-            hideError('lp5_other');
-        }
-    };
-
-    // LP6 Qualitative field toggle
-    window.toggleLP6Qualitative = function() {
-        const lp6Section = document.getElementById('lp6_qualitative_section');
-        const lp6Visible = document.getElementById('lp6_qualitative_visible');
-        const selectedValue = document.querySelector('input[name="lp6_filing_efficiency"]:checked')?.value;
-        const showValues = ['inefficient', 'very_inefficient'];
-
-        if (lp6Section && lp6Visible) {
-            if (showValues.includes(selectedValue)) {
-                lp6Section.style.display = 'block';
-                lp6Visible.value = '1';
-            } else {
-                lp6Section.style.display = 'none';
-                lp6Visible.value = '0';
-                const textarea = document.getElementById('lp6_qualitative_text');
-                if (textarea) textarea.value = '';
-                hideError('lp6_qualitative');
-            }
-        }
-    };
-
-    // LP8 Qualitative field toggle
-    window.toggleLP8Qualitative = function() {
-        const lp8Section = document.getElementById('lp8_qualitative_section');
-        const lp8Visible = document.getElementById('lp8_qualitative_visible');
-        const selectedValue = document.querySelector('input[name="lp8_notice_communication"]:checked')?.value;
-        const showValues = ['ineffective', 'very_ineffective'];
-
-        if (lp8Section && lp8Visible) {
-            if (showValues.includes(selectedValue)) {
-                lp8Section.style.display = 'block';
-                lp8Visible.value = '1';
-            } else {
-                lp8Section.style.display = 'none';
-                lp8Visible.value = '0';
-                const textarea = document.getElementById('lp8_qualitative_text');
-                if (textarea) textarea.value = '';
-                hideError('lp8_qualitative');
-            }
-        }
-    };
-
-    // LP10 Qualitative field toggle
-    window.toggleLP10Qualitative = function() {
-        const lp10Section = document.getElementById('lp10_qualitative_section');
-        const lp10Visible = document.getElementById('lp10_qualitative_visible');
-        const selectedValue = document.querySelector('input[name="lp10_law_change_impact"]:checked')?.value;
-        const showValues = ['significant_negative', 'moderate_negative'];
-
-        if (lp10Section && lp10Visible) {
-            if (showValues.includes(selectedValue)) {
-                lp10Section.style.display = 'block';
-                lp10Visible.value = '1';
-            } else {
-                lp10Section.style.display = 'none';
-                lp10Visible.value = '0';
-                const textarea = document.getElementById('lp10_qualitative_text');
-                if (textarea) textarea.value = '';
-                hideError('lp10_qualitative');
-            }
-        }
-    };
-
-    // --- Customs Agent Logic ---
-
-    // CA1: Toggle CA1a visibility
-    function toggleCA1a() {
-        const selectedValue = document.querySelector('input[name="ca1_training_received"]:checked');
-        const ca1aSection = document.getElementById('ca1a_section');
-        const ca1aVisibleInput = document.getElementById('ca1a_visible');
-        const showCA1a = selectedValue && selectedValue.value !== 'no_training';
-
-        if (ca1aSection) {
-            ca1aSection.style.display = showCA1a ? 'block' : 'none';
-            ca1aVisibleInput.value = showCA1a ? '1' : '0';
-            if (!showCA1a) {
-                document.querySelectorAll('input[name="ca1a_training_usefulness"]').forEach(radio => radio.checked = false);
-                hideError('ca1a');
-            }
-        }
-    }
-
-    // CA1a validation
-    function validateCA1a() {
-        const ca1aRadios = document.querySelectorAll('input[name="ca1a_training_usefulness"]:checked');
-        const ca1aSection = document.getElementById('ca1a_section');
-        const ca1Training = document.querySelector('input[name="ca1_training_received"]:checked');
+    // LP5: Dynamic Tax-Type Grid Logic
+    function updateLP5Section() {
+        const lp5Section = document.getElementById('lp5_section');
+        const lp5VisibleInput = document.getElementById('lp5_visible');
         
-        const shouldValidate = ca1aSection && 
-                              ca1aSection.style.display === 'block' && 
-                              ca1Training && 
-                              ca1Training.value !== 'no_training';
+        if (!lp5Section || !lp5VisibleInput) return;
 
-        if (shouldValidate && ca1aRadios.length === 0) {
-            showError('ca1a', 'Please select an option for CA1a.');
+        // Collect all challenges from LP2, LP3, LP4
+        const allChallenges = {};
+        
+        // Check LP2 challenges
+        const lp2Radios = document.querySelectorAll('input[name^="lp2_"]');
+        lp2Radios.forEach(radio => {
+            if (radio.checked && (radio.value === 'moderate_challenge' || radio.value === 'major_challenge')) {
+                const functionName = radio.name.replace('lp2_', '');
+                allChallenges[functionName] = true;
+            }
+        });
+
+        // Check LP3 challenges
+        const lp3Radios = document.querySelectorAll('input[name^="lp3_"]');
+        lp3Radios.forEach(radio => {
+            if (radio.checked && (radio.value === 'moderate_challenge' || radio.value === 'major_challenge')) {
+                const functionName = radio.name.replace('lp3_', '');
+                allChallenges[functionName] = true;
+            }
+        });
+
+        // Check LP4 challenges
+        const lp4Radios = document.querySelectorAll('input[name^="lp4_"]');
+        lp4Radios.forEach(radio => {
+            if (radio.checked && (radio.value === 'moderate_challenge' || radio.value === 'major_challenge')) {
+                const functionName = radio.name.replace('lp4_', '');
+                allChallenges[functionName] = true;
+            }
+        });
+
+        const hasModerateMajorChallenges = Object.keys(allChallenges).length > 0;
+        
+        lp5Section.style.display = hasModerateMajorChallenges ? 'block' : 'none';
+        lp5VisibleInput.value = hasModerateMajorChallenges ? '1' : '0';
+
+        if (hasModerateMajorChallenges) {
+            populateLP5Table(Object.keys(allChallenges));
+        } else {
+            clearLP5Table();
+            hideError('lp5');
+        }
+    }
+
+    function populateLP5Table(challengingFunctions) {
+        const tableBody = document.querySelector('#lp5_tax_type_table tbody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '';
+
+        const functionMap = {
+            'appeals_commissioner': 'Appeal filings before Commissioner',
+            'appellate_tribunal': 'Appellate Tribunal representations',
+            'high_court': 'High Court/Supreme Court references',
+            'audit_responses': 'Audit responses & compliance',
+            'show_cause': 'Show cause notice responses',
+            'return_filing': 'Return filing & compliance',
+            'amendments': 'Return amendments & rectifications',
+            'withholding': 'Withholding statements & compliance',
+            'risk_assessment': 'Risk assessment procedures',
+            'tax_planning': 'Tax planning advisory services',
+            'adr': 'Alternate Dispute Resolution',
+            'settlement': 'Settlement procedures',
+            'epayments': 'e-Payments & refund processing',
+            'cpr_corrections': 'CPR corrections',
+            'correspondence': 'FBR correspondence management'
+        };
+
+        // Use enhanced safe JSON parsing for saved data
+        const savedDataElement = document.getElementById('lp5_saved_data');
+        console.log('Raw LP5 saved data:', savedDataElement?.value);
+        
+        const savedTaxTypes = safeJsonParse(savedDataElement?.value, {});
+        console.log('Parsed LP5 saved data:', savedTaxTypes);
+
+        challengingFunctions.forEach(func => {
+            const row = document.createElement('tr');
+            const displayName = functionMap[func] || func;
+            
+            // Get saved checkbox states for this function
+            const savedFunctionData = savedTaxTypes[func] || {};
+            const incomeTaxChecked = !!savedFunctionData.income_tax; 
+            const salesTaxChecked = !!savedFunctionData.sales_tax;
+            
+            row.innerHTML = `
+                <td class="function-name">${functionMap[func] || func}</td>
+                <td class="tax-type-option">
+                    <input type="checkbox" name="lp5_${func}_income" value="income_tax"
+                           ${incomeTaxChecked ? 'checked' : ''}
+                           aria-label="Income Tax for ${displayName}">
+                </td>
+                <td class="tax-type-option">
+                    <input type="checkbox" name="lp5_${func}_sales" value="sales_tax"
+                           ${salesTaxChecked ? 'checked' : ''}
+                           aria-label="Sales Tax/FED for ${displayName}">
+                </td>
+            `;
+            console.log(`Function: ${func}, Income Tax: ${incomeTaxChecked}, Sales Tax: ${salesTaxChecked}`);
+            tableBody.appendChild(row);
+        });
+
+        // Add event listeners to LP5 checkboxes to save data on change
+        const lp5Checkboxes = document.querySelectorAll('input[name^="lp5_"]');
+        lp5Checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', saveLP5Data);
+        });
+    }
+
+    function saveLP5Data() {
+        const lp5Checkboxes = document.querySelectorAll('input[name^="lp5_"]');
+        const savedData = {};
+        
+        lp5Checkboxes.forEach(checkbox => {
+            const nameParts = checkbox.name.split('_');
+            const func = nameParts.slice(1, -1).join('_'); // Join all parts except 'lp5' and tax type
+            const taxType = nameParts[nameParts.length - 1] === 'income' ? 'income_tax' : 'sales_tax';
+            if (checkbox.checked) {
+                if (!savedData[func]) {
+                    savedData[func] = {};
+                }
+                savedData[func][taxType] = true;
+            }
+        });
+
+        const savedDataElement = document.getElementById('lp5_saved_data');
+        if (savedDataElement) {
+            try {
+                const previousValue = savedDataElement.value;
+                savedDataElement.value = JSON.stringify(savedData);
+                // Log only when data changes to reduce verbosity
+                if (savedDataElement.value !== previousValue) {
+                    console.log('LP5 data saved:', savedDataElement.value);
+                }
+            } catch (error) {
+                console.error('Error saving LP5 data:', error);
+            }
+        }
+    }
+
+    function clearLP5Table() {
+        const tableBody = document.querySelector('#lp5_tax_type_table tbody');
+        if (tableBody) {
+            tableBody.innerHTML = '';
+        }
+    }
+
+    // Grid validation helper
+    function validateGrid(gridPrefix, errorField) {
+        const radios = document.querySelectorAll(`input[name^="${gridPrefix}_"]`);
+        let allCompleted = true;
+        
+        for (let i = 0; i < radios.length; i += 5) {
+            const rowRadios = Array.from(radios).slice(i, i + 5);
+            const hasSelection = rowRadios.some(radio => radio.checked);
+            if (!hasSelection) {
+                allCompleted = false;
+                break;
+            }
+        }
+        
+        if (!allCompleted) {
+            showError(errorField, `Please complete all rows in ${gridPrefix.toUpperCase()}`);
             return false;
         } else {
-            hideError('ca1a');
+            hideError(errorField);
             return true;
         }
     }
 
-    // CA4 Selection counter
-    function setupCA4Counter() {
-        const checkboxes = document.querySelectorAll('input[name="ca4_procedure_challenges"]');
-        const counter = document.getElementById('ca4_counter');
-
-        function updateCA4Counter() {
-            const selected = document.querySelectorAll('input[name="ca4_procedure_challenges"]:checked');
-            const maxSelections = 3;
-            const noChallengesChecked = document.getElementById('ca4_no_challenges')?.checked;
-
-            if (counter) {
-                counter.textContent = selected.length;
-                counter.style.color = (selected.length >= maxSelections && !noChallengesChecked) ? '#dc3545' : '#666';
-            }
-
-            checkboxes.forEach(cb => {
-                if (selected.length >= maxSelections && !cb.checked && cb.value !== 'no_challenges' && !noChallengesChecked) {
-                    cb.disabled = true;
-                    cb.parentElement.classList.add('disabled-input');
-                } else {
-                    cb.disabled = false;
-                    cb.parentElement.classList.remove('disabled-input');
-                }
-            });
-
-            updateCA4State();
-        }
-
-        if (checkboxes.length > 0) {
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function(e) {
-                    updateCA4Counter();
-                    if (e.target.value === 'other') toggleCA4Other();
-                });
-            });
-            updateCA4Counter();
-        }
-    }
-
-    window.toggleCA4Other = function() {
-        const checkbox = document.getElementById('ca4_other');
-        const specifyDiv = document.getElementById('ca4_other_specify');
-        const textarea = document.getElementById('ca4_other_text');
-
-        if (checkbox && checkbox.checked) {
-            specifyDiv.style.display = 'block';
-        } else {
-            specifyDiv.style.display = 'none';
-            if (textarea) textarea.value = '';
-            hideError('ca4_other');
-        }
-        updateCA4State();
-    };
-
-    window.updateCA4State = function() {
-        const checkboxes = document.querySelectorAll('input[name="ca4_procedure_challenges"]:checked');
-        const noChallenges = document.getElementById('ca4_no_challenges');
-        const otherCheckbox = document.getElementById('ca4_other');
-        const textarea = document.getElementById('ca4_other_text');
-
-        const textEntered = textarea && textarea.value.trim().length > 0;
-        const hasSelections = checkboxes.length > 0;
-
-        if (noChallenges && noChallenges.checked && checkboxes.length === 1) {
-            hideError('ca4');
-        }
-        if (otherCheckbox && otherCheckbox.checked && textEntered) {
-            hideError('ca4_other');
-        }
-
-        const allCheckboxes = document.querySelectorAll('input[name="ca4_procedure_challenges"]');
-        if (noChallenges && noChallenges.checked) {
-            allCheckboxes.forEach(cb => {
-                if (cb.value !== 'no_challenges') {
-                    cb.disabled = true;
-                    cb.parentElement.classList.add('disabled-input');
-                }
-            });
-        } else {
-            allCheckboxes.forEach(cb => {
-                cb.disabled = false;
-                cb.parentElement.classList.remove('disabled-input');
-            });
-        }
-    };
-
-    // CA12 Selection counter
-    function setupCA12Counter() {
-        const checkboxes = document.querySelectorAll('input[name="ca12_operational_challenges"]');
-        const counter = document.getElementById('ca12_counter');
-
-        function updateCA12Counter() {
-            const selected = document.querySelectorAll('input[name="ca12_operational_challenges"]:checked');
-            const maxSelections = 3;
-
-            if (counter) {
-                counter.textContent = selected.length;
-                counter.style.color = selected.length >= maxSelections ? '#dc3545' : '#666';
-            }
-
-            checkboxes.forEach(cb => {
-                if (selected.length >= maxSelections && !cb.checked) {
-                    cb.disabled = true;
-                    cb.parentElement.classList.add('disabled-input');
-                } else {
-                    cb.disabled = false;
-                    cb.parentElement.classList.remove('disabled-input');
-                }
-            });
-        }
-
-        if (checkboxes.length > 0) {
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function(e) {
-                    updateCA12Counter();
-                    if (e.target.value === 'other') toggleCA12Other();
-                });
-            });
-            updateCA12Counter();
-        }
-    }
-
-    window.toggleCA12Other = function() {
-        const checkbox = document.getElementById('ca12_other');
-        const specifyDiv = document.getElementById('ca12_other_specify');
-        const textarea = document.getElementById('ca12_other_text');
-
-        if (checkbox && checkbox.checked) {
-            specifyDiv.style.display = 'block';
-        } else {
-            specifyDiv.style.display = 'none';
-            if (textarea) textarea.value = '';
-            hideError('ca12_other');
-        }
-    };
-
-    // CA13 "Other" field toggle
-    window.toggleCA13Other = function() {
-        const radio = document.getElementById('ca13_other');
-        const specifyDiv = document.getElementById('ca13_other_specify');
-        const textarea = document.getElementById('ca13_other_text');
-
-        if (radio && radio.checked) {
-            specifyDiv.style.display = 'block';
-        } else {
-            specifyDiv.style.display = 'none';
-            if (textarea) textarea.value = '';
-            hideError('ca13_other');
-        }
-    };
-
-    // LP4 Validation
-    function validateLP4() {
-        const checkboxes = document.querySelectorAll('input[name*="lp4_"][type="checkbox"]');
-        const otherProcedure = document.getElementById('lp4_other_procedure');
-        const otherSales = document.getElementById('lp4_other_sales');
-        const otherIncome = document.getElementById('lp4_other_income');
-
-        const hasSelection = Array.from(checkboxes).some(cb => cb.checked);
-        const otherTextEntered = otherProcedure && otherProcedure.value.trim().length > 0;
-        const otherChecked = (otherSales && otherSales.checked) || (otherIncome && otherIncome.checked);
-
-        if (!hasSelection && (!otherTextEntered || !otherChecked)) {
-            showError('lp4', 'Please select at least one procedure or specify an "Other" procedure with a selection.');
-            return false;
-        } else if (otherChecked && !otherTextEntered) {
-            showError('lp4', 'Please specify the "Other" procedure name.');
-            return false;
-        } else {
-            hideError('lp4');
-            return true;
-        }
+    // Text validation helper (modified to allow empty input)
+    function validateText(textareaId, errorField) {
+        const textarea = document.getElementById(textareaId);
+        const value = textarea ? textarea.value.trim() : '';
+        hideError(errorField); // Always valid, even if empty
+        return true;
     }
 
     // Validate Legal Practitioner Section
     function validateLegalSection() {
         let isValid = true;
 
-        // Required radio groups for Legal Practitioner
-        const requiredLegalRadios = [
-            { name: 'lp1_technical_issues', field: 'lp1' },
-            { name: 'lp6_filing_efficiency', field: 'lp6' },
-            { name: 'lp7_case_tracking', field: 'lp7' },
-            { name: 'lp8_notice_communication', field: 'lp8' },
-            { name: 'lp9_law_accessibility', field: 'lp9' },
-            { name: 'lp10_law_change_impact', field: 'lp10' },
-            { name: 'lp11_adr_effectiveness', field: 'lp11' },
-            { name: 'lp12_dispute_transparency', field: 'lp12' },
-            { name: 'lp13_overall_satisfaction', field: 'lp13' }
-        ];
-
-        requiredLegalRadios.forEach(radio => {
-            const selected = document.querySelector(`input[name="${radio.name}"]:checked`);
-            if (!selected) {
-                showError(radio.field, `Please select an option for ${radio.name.replace('_', ' ').toUpperCase()}.`);
-                isValid = false;
-            } else {
-                hideError(radio.field);
-            }
-        });
-
-        // LP2: Conditional validation
-        const lp1Selected = document.querySelector('input[name="lp1_technical_issues"]:checked');
-        const lp2Section = document.getElementById('lp2_section');
-        if (lp1Selected && lp2Section && lp2Section.style.display === 'block') {
-            const lp2Checkboxes = document.querySelectorAll('input[name="lp2_common_problems"]:checked');
-            if (lp2Checkboxes.length === 0) {
-                showError('lp2', 'Please select at least one technical issue for LP2.');
-                isValid = false;
-            } else {
-                hideError('lp2');
-                if (document.getElementById('lp2_other')?.checked) {
-                    const otherText = document.getElementById('lp2_other_text')?.value.trim();
-                    if (!otherText) {
-                        showError('lp2_other', 'Please specify details for the "Other" option in LP2.');
-                        isValid = false;
-                    } else {
-                        hideError('lp2_other');
-                    }
-                }
-            }
-        }
-
-        // LP3: Improvement areas
-        const lp3Checkboxes = document.querySelectorAll('input[name="lp3_improvement_areas"]:checked');
-        if (lp3Checkboxes.length === 0) {
-            showError('lp3', 'Please select at least one improvement area for LP3.');
-            isValid = false;
-        } else if (lp3Checkboxes.length > 3) {
-            showError('lp3', 'Please select no more than 3 options for LP3.');
+        // LP1: Overall Digital Support
+        const lp1Selected = document.querySelector('input[name="lp1_digital_support"]:checked');
+        if (!lp1Selected) {
+            showError('lp1', 'Please select an option for LP1 (Overall Digital Support)');
             isValid = false;
         } else {
-            hideError('lp3');
-            if (document.getElementById('lp3_other')?.checked) {
-                const otherText = document.getElementById('lp3_other_text')?.value.trim();
-                if (!otherText) {
-                    showError('lp3_other', 'Please specify details for the "Other" option in LP3.');
-                    isValid = false;
-                } else {
-                    hideError('lp3_other');
-                }
-            }
+            hideError('lp1');
         }
 
-        // LP4: Procedures matrix
-        if (!validateLP4()) {
+        // LP2: Representation & Appeals Grid
+        if (!validateGrid('lp2', 'lp2')) {
             isValid = false;
         }
 
-        // LP5: Representation challenges
-        const lp5Checkboxes = document.querySelectorAll('input[name="lp5_representation_challenges"]:checked');
-        if (lp5Checkboxes.length === 0) {
-            showError('lp5', 'Please select at least one challenge for LP5.');
+        // LP3: Compliance & Advisory Grid
+        if (!validateGrid('lp3', 'lp3')) {
             isValid = false;
-        } else if (lp5Checkboxes.length > 3) {
-            showError('lp5', 'Please select no more than 3 options for LP5.');
+        }
+
+        // LP4: Dispute Resolution & Documentation Grid
+        if (!validateGrid('lp4', 'lp4')) {
             isValid = false;
-        } else {
-            hideError('lp5');
-            if (document.getElementById('lp5_other')?.checked) {
-                const otherText = document.getElementById('lp5_other_text')?.value.trim();
-                if (!otherText) {
-                    showError('lp5_other', 'Please specify details for the "Other" option in LP5.');
-                    isValid = false;
-                } else {
-                    hideError('lp5_other');
-                }
+        }
+
+        // LP5: Tax-Type Impact (conditional)
+        const lp5Visible = document.getElementById('lp5_visible')?.value === '1';
+        if (lp5Visible) {
+            const lp5Checkboxes = document.querySelectorAll('input[name^="lp5_"]:checked');
+            if (lp5Checkboxes.length === 0) {
+                showError('lp5', 'Please indicate tax types for your challenging functions in LP5');
+                isValid = false;
+            } else {
+                hideError('lp5');
             }
         }
 
-        // LP6: Qualitative validation
-        const lp6Section = document.getElementById('lp6_qualitative_section');
-        if (lp6Section && lp6Section.style.display === 'block') {
-            const lp6Text = document.getElementById('lp6_qualitative_text')?.value.trim();
-            if (!lp6Text) {
-                showError('lp6_qualitative', 'Please provide details for the filing challenges in LP6.');
-                isValid = false;
-            } else {
-                hideError('lp6_qualitative');
-            }
-        }
-
-        // LP8: Qualitative validation
-        const lp8Section = document.getElementById('lp8_qualitative_section');
-        if (lp8Section && lp8Section.style.display === 'block') {
-            const lp8Text = document.getElementById('lp8_qualitative_text')?.value.trim();
-            if (!lp8Text) {
-                showError('lp8_qualitative', 'Please provide details for the communication challenges in LP8.');
-                isValid = false;
-            } else {
-                hideError('lp8_qualitative');
-            }
-        }
-
-        // LP10: Qualitative validation
-        const lp10Section = document.getElementById('lp10_qualitative_section');
-        if (lp10Section && lp10Section.style.display === 'block') {
-            const lp10Text = document.getElementById('lp10_qualitative_text')?.value.trim();
-            if (!lp10Text) {
-                showError('lp10_qualitative', 'Please provide details for the impact of tax law changes in LP10.');
-                isValid = false;
-            } else {
-                hideError('lp10_qualitative');
-            }
-        }
+        // LP6: Priority Improvement (optional)
+        validateText('lp6_priority_improvement', 'lp6');
 
         return isValid;
     }
@@ -620,106 +332,54 @@ document.addEventListener('DOMContentLoaded', function () {
     function validateCustomsSection() {
         let isValid = true;
 
-        // Required radio groups for Customs Agent
-        const requiredCustomsRadios = [
-            { name: 'ca1_training_received', field: 'ca1' },
-            { name: 'ca2_psw_weboc_integration', field: 'ca2' },
-            { name: 'ca3_psw_comparison', field: 'ca3' },
-            { name: 'ca5_duty_assessment', field: 'ca5' },
-            { name: 'ca6_cargo_efficiency', field: 'ca6' },
-            { name: 'ca7_document_verification', field: 'ca7' },
-            { name: 'ca8_agency_coordination', field: 'ca8' },
-            { name: 'ca9_system_reliability', field: 'ca9' },
-            { name: 'ca10_policy_impact', field: 'ca10' },
-            { name: 'ca11_client_representation', field: 'ca11' },
-            { name: 'ca13_biggest_challenge', field: 'ca13' }
-        ];
-
-        requiredCustomsRadios.forEach(radio => {
-            const selected = document.querySelector(`input[name="${radio.name}"]:checked`);
-            if (!selected) {
-                showError(radio.field, `Please select an option for ${radio.name.replace('_', ' ').toUpperCase()}.`);
-                isValid = false;
-            } else {
-                hideError(radio.field);
-            }
-        });
-
-        // CA1a: Conditional validation
-        if (!validateCA1a()) {
-            isValid = false;
-        }
-
-        // CA4: Procedure challenges
-        const ca4Checkboxes = document.querySelectorAll('input[name="ca4_procedure_challenges"]:checked');
-        const noChallengesChecked = document.getElementById('ca4_no_challenges')?.checked;
-
-        if (ca4Checkboxes.length === 0) {
-            showError('ca4', 'Please select at least one option for CA4.');
-            isValid = false;
-        } else if (noChallengesChecked && ca4Checkboxes.length > 1) {
-            showError('ca4', 'If you select "No significant challenges", you cannot select other options.');
-            isValid = false;
-        } else if (ca4Checkboxes.length > 3 && !noChallengesChecked) {
-            showError('ca4', 'Please select no more than 3 options for CA4.');
+        // CA1: Training
+        const ca1Selected = document.querySelector('input[name="ca1_training"]:checked');
+        if (!ca1Selected) {
+            showError('ca1', 'Please select an option for CA1 (Training)');
             isValid = false;
         } else {
-            hideError('ca4');
+            hideError('ca1');
         }
 
-        // CA4 "Other" text validation
-        if (document.getElementById('ca4_other')?.checked) {
-            const otherText = document.getElementById('ca4_other_text')?.value.trim();
-            if (!otherText) {
-                showError('ca4_other', 'Please specify details for the "Other" option in CA4.');
-                isValid = false;
-            } else {
-                hideError('ca4_other');
-            }
-        }
-
-        // CA12: Operational challenges
-        const ca12Checkboxes = document.querySelectorAll('input[name="ca12_operational_challenges"]:checked');
-        if (ca12Checkboxes.length === 0) {
-            showError('ca12', 'Please select at least one operational challenge for CA12.');
+        // CA2: System Integration
+        const ca2Selected = document.querySelector('input[name="ca2_system_integration"]:checked');
+        if (!ca2Selected) {
+            showError('ca2', 'Please select an option for CA2 (System Integration)');
             isValid = false;
         } else {
-            hideError('ca12');
-            if (document.getElementById('ca12_other')?.checked) {
-                const otherText = document.getElementById('ca12_other_text')?.value.trim();
-                if (!otherText) {
-                    showError('ca12_other', 'Please specify details for the "Other" option in CA12.');
-                    isValid = false;
-                } else {
-                    hideError('ca12_other');
-                }
-            }
+            hideError('ca2');
         }
 
-        // CA13: Biggest challenge validation
-        const ca13Radios = document.querySelectorAll('input[name="ca13_biggest_challenge"]');
-        let ca13Selected = false;
-        for (const radio of ca13Radios) {
-            if (radio.checked) {
-                ca13Selected = true;
-                if (radio.value === 'other') {
-                    const ca13OtherText = document.getElementById('ca13_other_text')?.value.trim();
-                    if (!ca13OtherText) {
-                        showError('ca13_other', 'Please specify details for the "Other" option in CA13.');
-                        isValid = false;
-                    } else {
-                        hideError('ca13_other');
-                    }
-                }
-                break;
-            }
+        // CA3: Customs Function Challenges Grid
+        if (!validateGrid('ca3', 'ca3')) {
+            isValid = false;
         }
-        if (!ca13Selected) {
-            showError('ca13', 'Please select an option for CA13.');
+
+        // CA4: Process Effectiveness Grid
+        if (!validateGrid('ca4', 'ca4')) {
+            isValid = false;
+        }
+
+        // CA5: Policy Impact
+        const ca5Selected = document.querySelector('input[name="ca5_policy_impact"]:checked');
+        if (!ca5Selected) {
+            showError('ca5', 'Please select an option for CA5 (Policy Impact)');
             isValid = false;
         } else {
-            hideError('ca13');
+            hideError('ca5');
         }
+
+        // CA6: Combined Challenge & Improvement
+        const ca6Challenge = document.getElementById('ca6_biggest_challenge');
+        if (!ca6Challenge || !ca6Challenge.value) {
+            showError('ca6_challenge', 'Please select your biggest challenge in CA6');
+            isValid = false;
+        } else {
+            hideError('ca6_challenge');
+        }
+
+        // CA6: Improvement (optional)
+        validateText('ca6_improvement', 'ca6_improvement');
 
         return isValid;
     }
@@ -729,50 +389,56 @@ document.addEventListener('DOMContentLoaded', function () {
         const allRadios = document.querySelectorAll('input[type="radio"]');
         allRadios.forEach(radio => {
             radio.addEventListener('change', function() {
-                const fieldName = this.name.split('_')[0];
-                hideError(fieldName);
-                // Clear qualitative errors when radio changes
-                if (this.name === 'lp6_filing_efficiency') hideError('lp6_qualitative');
-                if (this.name === 'lp8_notice_communication') hideError('lp8_qualitative');
-                if (this.name === 'lp10_law_change_impact') hideError('lp10_qualitative');
-                if (this.name === 'ca13_biggest_challenge' && this.value === 'other') hideError('ca13_other');
-            });
-        });
-
-        const allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
-        allCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const fieldName = this.name.split('_')[0];
-                hideError(fieldName);
-                if (this.value === 'other' && !this.checked) {
-                    hideError(`${fieldName}_other`);
+                const name = this.name;
+                if (name.startsWith('lp1')) hideError('lp1');
+                if (name.startsWith('ca1')) hideError('ca1');
+                if (name.startsWith('ca2')) hideError('ca2');
+                if (name.startsWith('ca5')) hideError('ca5');
+                if (name.startsWith('lp2_') || name.startsWith('lp3_') || name.startsWith('lp4_')) {
+                    updateLP5Section();
                 }
             });
         });
 
-        const allTextareas = document.querySelectorAll('textarea');
-        allTextareas.forEach(textarea => {
+        const gridRadios = document.querySelectorAll('input[name^="lp2_"], input[name^="lp3_"], input[name^="lp4_"], input[name^="ca3_"], input[name^="ca4_"]');
+        gridRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const gridPrefix = this.name.split('_')[0];
+                hideError(gridPrefix);
+            });
+        });
+
+        document.addEventListener('change', function(e) {
+            if (e.target.name && e.target.name.startsWith('lp5_')) {
+                hideError('lp5');
+            }
+        });
+
+        const textareas = document.querySelectorAll('textarea');
+        textareas.forEach(textarea => {
             textarea.addEventListener('input', function() {
-                const fieldId = this.id.replace('_text', '');
-                if (fieldId && this.value.trim().length > 0) {
-                    hideError(fieldId);
-                }
+                if (this.id === 'lp6_priority_improvement') hideError('lp6');
+                if (this.id === 'ca6_improvement') hideError('ca6_improvement');
             });
         });
+
+        const ca6Dropdown = document.getElementById('ca6_biggest_challenge');
+        if (ca6Dropdown) {
+            ca6Dropdown.addEventListener('change', function() {
+                hideError('ca6_challenge');
+            });
+        }
     }
 
-    // Validate all fields
     function validateAllFields() {
         let isValid = true;
 
-        // Check if Legal Practitioner section exists
-        const lpSection = document.querySelector('input[name="lp1_technical_issues"]');
+        const lpSection = document.querySelector('input[name="lp1_digital_support"]');
         if (lpSection && !validateLegalSection()) {
             isValid = false;
         }
 
-        // Check if Customs Agent section exists
-        const caSection = document.querySelector('input[name="ca1_training_received"]');
+        const caSection = document.querySelector('input[name="ca1_training"]');
         if (caSection && !validateCustomsSection()) {
             isValid = false;
         }
@@ -780,97 +446,73 @@ document.addEventListener('DOMContentLoaded', function () {
         return isValid;
     }
 
-    // Initialize conditional sections based on current form state
     function initializeConditionalSections() {
         console.log('Initializing conditional sections...');
 
-        // Set up event listeners for main conditional triggers
-        const lp1Radios = document.querySelectorAll('input[name="lp1_technical_issues"]');
-        lp1Radios.forEach(radio => {
-            radio.addEventListener('change', toggleLP2Section);
+        const challengeRadios = document.querySelectorAll('input[name^="lp2_"], input[name^="lp3_"], input[name^="lp4_"]');
+        challengeRadios.forEach(radio => {
+            radio.addEventListener('change', updateLP5Section);
         });
 
-        const lp6Radios = document.querySelectorAll('input[name="lp6_filing_efficiency"]');
-        lp6Radios.forEach(radio => {
-            radio.addEventListener('change', toggleLP6Qualitative);
-        });
-
-        const lp8Radios = document.querySelectorAll('input[name="lp8_notice_communication"]');
-        lp8Radios.forEach(radio => {
-            radio.addEventListener('change', toggleLP8Qualitative);
-        });
-
-        const lp10Radios = document.querySelectorAll('input[name="lp10_law_change_impact"]');
-        lp10Radios.forEach(radio => {
-            radio.addEventListener('change', toggleLP10Qualitative);
-        });
-
-        const ca1Radios = document.querySelectorAll('input[name="ca1_training_received"]');
-        ca1Radios.forEach(radio => {
-            radio.addEventListener('change', toggleCA1a);
-        });
-
-        const ca13Radios = document.querySelectorAll('input[name="ca13_biggest_challenge"]');
-        ca13Radios.forEach(radio => {
-            radio.addEventListener('change', toggleCA13Other);
-        });
-
-        // Initialize sections based on current selections
-        toggleLP2Section();
-        toggleLP6Qualitative();
-        toggleLP8Qualitative();
-        toggleLP10Qualitative();
-        toggleCA1a();
-        toggleCA13Other();
-
-        // Initialize "Other" sections
-        if (document.getElementById('lp2_other')?.checked) toggleLP2Other();
-        if (document.getElementById('lp3_other')?.checked) toggleLP3Other();
-        if (document.getElementById('lp5_other')?.checked) toggleLP5Other();
-        if (document.getElementById('ca4_other')?.checked) toggleCA4Other();
-        if (document.getElementById('ca12_other')?.checked) toggleCA12Other();
-        if (document.getElementById('ca13_other')?.checked) toggleCA13Other();
-
-        // Initialize counters
-        setupLP3Counter();
-        setupLP5Counter();
-        setupCA4Counter();
-        setupCA12Counter();
-
-        // Initialize error clearing
+        // Initialize LP5 section on page load with delay to ensure DOM is ready
+        setTimeout(() => {
+            updateLP5Section();
+        }, 100);
+        
         clearValidationErrorsOnInteraction();
-
         console.log('Conditional sections initialized successfully');
     }
 
-    // Form submission handler
-    document.getElementById('roleSpecificForm').addEventListener('submit', function (e) {
-        console.log('Form submission initiated...');
-
-        const isValid = validateAllFields();
-
-        if (!isValid) {
-            console.log('Form validation failed - preventing submission');
-            e.preventDefault();
-
-            const firstError = document.querySelector('.validation-error-inline[style*="display: block"]');
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        } else {
-            console.log('Form validation passed - allowing submission to cross-system-perspectives');
-        }
-    });
-
-    // Real-time validation with event delegation
     const form = document.getElementById('roleSpecificForm');
-    form.addEventListener('change', function(e) {
-        if (e.target.type === 'radio' || e.target.type === 'checkbox') {
-            validateAllFields();
-        }
-    });
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            console.log('Form submission initiated...');
 
-    // Initialize everything when page loads
+            // Save LP5 data before validation to ensure it's captured
+            saveLP5Data();
+
+            const isValid = validateAllFields();
+
+            if (!isValid) {
+                console.log('Form validation failed - preventing submission');
+                e.preventDefault();
+                const firstError = document.querySelector('.validation-error-inline[style*="display: block"]');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } else {
+                console.log('Form validation passed - allowing submission to cross-system-perspectives');
+            }
+        });
+
+        form.addEventListener('change', function(e) {
+            if (e.target.type === 'radio' || e.target.type === 'checkbox') {
+                if (e.target.name === 'lp1_digital_support') {
+                    const lp1Selected = document.querySelector('input[name="lp1_digital_support"]:checked');
+                    if (lp1Selected) hideError('lp1');
+                }
+                if (e.target.name === 'ca1_training') {
+                    const ca1Selected = document.querySelector('input[name="ca1_training"]:checked');
+                    if (ca1Selected) hideError('ca1');
+                }
+            }
+        });
+
+        form.addEventListener('input', function(e) {
+            if (e.target.type === 'textarea') {
+                if (e.target.id === 'lp6_priority_improvement' && e.target.value.trim()) {
+                    hideError('lp6');
+                }
+                if (e.target.id === 'ca6_improvement' && e.target.value.trim()) {
+                    hideError('ca6_improvement');
+                }
+            }
+        });
+    }
+
+    // Handle browser navigation (back/forward) to save LP5 data
+    window.addEventListener('beforeunload', saveLP5Data);
+
     initializeConditionalSections();
     console.log('Role-specific form initialization complete');
 });

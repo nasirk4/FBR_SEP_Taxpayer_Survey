@@ -78,22 +78,28 @@ document.addEventListener('DOMContentLoaded', function () {
     /* Save draft with retries */
     async function saveDraft(retries = 2, delay = 1000) {
         const finalRemarksEl = document.getElementById('final_remarks');
-        const finalRemarks = finalRemarksEl ? finalRemarksEl.value.trim() : '';
+        const surveyFeedbackEl = document.getElementById('survey_feedback'); // NEW
         
-        if (!finalRemarks) {
-            console.log('No remarks to save');
-            return true; // Nothing to save is not an error
+        const finalRemarks = finalRemarksEl ? finalRemarksEl.value.trim() : '';
+        const surveyFeedback = surveyFeedbackEl ? surveyFeedbackEl.value.trim() : ''; // NEW
+
+        // Only proceed if at least one field has content
+        if (!finalRemarks && !surveyFeedback) {
+            console.log('No remarks or feedback to save');
+            return true;
         }
 
         const formData = new FormData();
         formData.append('final_remarks', finalRemarks);
+        formData.append('survey_feedback', surveyFeedback); // NEW: Append feedback
         formData.append('save_draft', 'true');
         formData.append('draft_save_attempt', 'true');
 
         // Store in localStorage as backup
         try {
             localStorage.setItem('final_remarks_backup', finalRemarks);
-            console.log('Backed up to localStorage:', finalRemarks);
+            localStorage.setItem('survey_feedback_backup', surveyFeedback); // NEW: Backup feedback
+            console.log('Backed up to localStorage. Final Remarks:', finalRemarks.length, 'Feedback:', surveyFeedback.length);
         } catch (e) {
             console.warn('Cannot access localStorage:', e);
         }
@@ -130,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Clean up backup on successful save
                 try {
                     localStorage.removeItem('final_remarks_backup');
+                    localStorage.removeItem('survey_feedback_backup'); // NEW: Clear feedback backup
                     console.log('Cleared localStorage backup after successful save');
                 } catch (e) {}
                 
@@ -175,6 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const finalRemarksEl = document.getElementById('final_remarks');
         const errorBox = createErrorBox();
 
+        // Only final_remarks is required
         if (!finalRemarksEl || !finalRemarksEl.value.trim()) {
             errorBox.style.display = 'block';
             errorBox.innerHTML = '<div class="error-icon">⚠️</div><div class="error-message">Please provide your final remarks before submitting.</div>';
@@ -241,6 +249,7 @@ document.addEventListener('DOMContentLoaded', function () {
             submitBtn.disabled = true;
         }
 
+        // Note: FormData(form) collects all fields, including survey_feedback.
         const formData = new FormData(form);
         formData.append('confirm_submit', 'true');
 
@@ -298,29 +307,47 @@ document.addEventListener('DOMContentLoaded', function () {
     /* Enhanced localStorage sync with conflict resolution */
     function syncLocalStorageToSession() {
         const finalRemarksEl = document.getElementById('final_remarks');
-        if (!finalRemarksEl) return;
+        const surveyFeedbackEl = document.getElementById('survey_feedback'); // NEW
+        
+        if (!finalRemarksEl || !surveyFeedbackEl) return;
 
         try {
             const backupRemarks = localStorage.getItem('final_remarks_backup');
             const sessionRemarks = finalRemarksEl.value.trim();
+            const backupFeedback = localStorage.getItem('survey_feedback_backup'); // NEW
+            const sessionFeedback = surveyFeedbackEl.value.trim(); // NEW
             
-            console.log('Sync check - Backup:', !!backupRemarks, 'Session:', !!sessionRemarks);
-            
-            // Only restore if we have backup AND textarea is empty
+            console.log('Sync check - Backup Remarks:', !!backupRemarks, 'Session Remarks:', !!sessionRemarks);
+            console.log('Sync check - Backup Feedback:', !!backupFeedback, 'Session Feedback:', !!sessionFeedback); // NEW
+
+            let dataRestored = false;
+
+            // Restore Final Remarks
             if (backupRemarks && !sessionRemarks) {
                 finalRemarksEl.value = backupRemarks;
-                console.log('Restored from localStorage');
-                
-                // Immediately save restored data to server
+                dataRestored = true;
+                console.log('Restored final remarks from localStorage');
+            }
+            // Restore Survey Feedback
+            if (backupFeedback && !sessionFeedback) { // NEW
+                surveyFeedbackEl.value = backupFeedback;
+                dataRestored = true;
+                console.log('Restored survey feedback from localStorage');
+            }
+            
+            // If we restored any data, immediately save it to the server session
+            if (dataRestored) {
                 saveDraft().catch(error => {
                     console.error('Failed to sync restored data:', error);
                 });
             }
-            // If we have both backup and session data, keep session data (newer)
-            else if (backupRemarks && sessionRemarks) {
-                console.log('Keeping session data, clearing old backup');
+            // If we have current session data (meaning a fresh load), clear old backups
+            else if (sessionRemarks || sessionFeedback) {
+                console.log('Keeping session data, clearing old backups');
                 localStorage.removeItem('final_remarks_backup');
+                localStorage.removeItem('survey_feedback_backup'); // NEW
             }
+
         } catch (e) {
             console.warn('LocalStorage access error:', e);
         }
@@ -340,21 +367,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Auto-save draft on input
-    const finalRemarksEl = document.getElementById('final_remarks');
-    if (finalRemarksEl) {
+    const fieldsToWatch = [
+        document.getElementById('final_remarks'),
+        document.getElementById('survey_feedback') // NEW: Watch the new field
+    ].filter(el => el); // Filter out any elements that might not exist
+
+    if (fieldsToWatch.length > 0) {
         const debouncedSave = debounce(() => {
             saveDraft().catch(error => {
                 console.error('Auto-save failed:', error);
             });
         }, 2000);
 
-        finalRemarksEl.addEventListener('input', function() {
-            // Hide any existing errors when user starts typing
-            const errorBox = document.getElementById('error-box');
-            if (errorBox && this.value.trim()) {
-                errorBox.style.display = 'none';
-            }
-            debouncedSave();
+        fieldsToWatch.forEach(el => {
+            el.addEventListener('input', function() {
+                // Hide any existing errors when user starts typing in the required field
+                const errorBox = document.getElementById('error-box');
+                const finalRemarksEl = document.getElementById('final_remarks');
+                if (errorBox && finalRemarksEl && finalRemarksEl.value.trim()) {
+                    errorBox.style.display = 'none';
+                }
+                debouncedSave();
+            });
         });
     }
 

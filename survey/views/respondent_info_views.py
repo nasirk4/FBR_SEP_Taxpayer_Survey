@@ -171,7 +171,6 @@ def validate_respondent_info_form(request):
     return respondent_data, errors, is_valid
 
 def handle_respondent_info_post(request):
-    """Handle POST request for respondent info form."""
     logger.debug("Processing respondent info POST request")
     
     respondent_data, errors, is_valid = validate_respondent_info_form(request)
@@ -192,6 +191,10 @@ def handle_respondent_info_post(request):
         request.session['respondent_info'] = respondent_data
         request.session.modified = True
 
+        # Convert lists to comma-separated strings for database
+        professional_role_str = ",".join(respondent_data.get('professional_roles', [])) if respondent_data.get('professional_roles') else ''
+        practice_areas_str = ",".join(respondent_data.get('practice_areas', [])) if respondent_data.get('practice_areas') else ''
+
         # Save to database
         survey_response = SurveyResponse(
             full_name=respondent_data['full_name'],
@@ -199,8 +202,8 @@ def handle_respondent_info_post(request):
             mobile=respondent_data['mobile'],
             province=respondent_data['province'],
             district=respondent_data['district'],
-            professional_roles=respondent_data['professional_roles'],
-            practice_areas=respondent_data['practice_areas'],
+            professional_role=professional_role_str,  # Corrected field name and converted to string
+            practice_areas=practice_areas_str,        # Corrected field name and converted to string
             experience_legal=respondent_data['experience_legal'],
             experience_customs=respondent_data['experience_customs'],
             kii_consent=respondent_data['kii_consent'],
@@ -215,7 +218,7 @@ def handle_respondent_info_post(request):
         return redirect('survey:generic_questions')
         
     except Exception as e:
-        logger.error(f"Error saving respondent info: {e}")
+        logger.error(f"Error saving respondent info: {str(e)}")
         context = get_progress_context(current_step=2, total_steps=6)
         context.update(get_respondent_info_context())
         context.update({
@@ -223,6 +226,7 @@ def handle_respondent_info_post(request):
             'respondent_info': prepare_respondent_data(request)
         })
         return render(request, 'survey/respondent_info.html', context)
+
 
 def handle_respondent_info_get(request):
     """Handle GET request for respondent info form."""

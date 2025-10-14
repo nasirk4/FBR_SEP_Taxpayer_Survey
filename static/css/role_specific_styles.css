@@ -1,4 +1,10 @@
 /* static/css/role_specific_styles.css */
+:root {
+    --fbr-blue: #007bff;
+    --fbr-red: #dc3545;
+    --fbr-green: #28a745;
+}
+
 .section-description {
     font-size: 0.95rem;
     color: #666;
@@ -6,54 +12,113 @@
     font-style: italic;
 }
 
+/* --- CA6 Dropdown Styling - Match Province Dropdown --- */
+select.form-control {
+    background: white url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>") no-repeat right 12px center;
+    background-size: 8px;
+    cursor: pointer;
+    padding-right: 36px; /* Space for arrow */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 16px;
+    height: 60px; /* Match province dropdown height */
+}
+
+/* Style select options (limited browser support) */
+select.form-control option {
+    font-size: 16px;
+    padding: 14px 12px;
+    background: white;
+    color: #333;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Matrix Table Styles for New Grid Layouts */
 .matrix-table-container {
     overflow-x: auto;
     margin: 1rem 0;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
 }
 
 .matrix-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.9rem;
+    background: white;
 }
 
 .matrix-table th,
 .matrix-table td {
-    border: 1px solid #ddd;
+    border: 1px solid #dee2e6;
     padding: 0.75rem;
-    text-align: left;
+    text-align: center;
+    vertical-align: middle;
 }
 
 .matrix-table th {
     background-color: #f8f9fa;
     font-weight: 600;
+    color: #495057;
 }
 
-.matrix-table .procedure-name {
+/* Function/Process Name Column */
+.matrix-table .function-name,
+.matrix-table .process-name {
     font-weight: 500;
-    min-width: 150px;
-}
-
-.matrix-table .procedure-checkbox {
-    text-align: center;
-    width: 80px;
-}
-
-.matrix-table .procedure-comment {
     min-width: 200px;
+    text-align: left;
+    background-color: #f8f9fa;
 }
 
-.matrix-table .procedure-checkbox input[type="checkbox"] {
-    transform: scale(1.2);
-}
-
-.selection-counter {
-    font-size: 0.9rem;
-    color: #666;
-    margin-top: 0.5rem;
+.matrix-table .function-name small {
+    display: block;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+    font-weight: normal;
     font-style: italic;
 }
 
+/* Challenge and Effectiveness Option Columns */
+.matrix-table .challenge-option,
+.matrix-table .effectiveness-option,
+.matrix-table .tax-type-option {
+    min-width: 100px;
+    text-align: center;
+}
+
+.matrix-table .challenge-option input[type="radio"],
+.matrix-table .effectiveness-option input[type="radio"],
+.matrix-table .tax-type-option input[type="checkbox"] {
+    transform: scale(1.1);
+}
+
+/* Tax-Type Specific Styles */
+.matrix-table .tax-type-option {
+    min-width: 80px;
+}
+
+.matrix-table .tax-type-option input[type="checkbox"] {
+    transform: scale(1.3);
+}
+
+/* Hover effects for better usability */
+.matrix-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.matrix-table .challenge-option:hover,
+.matrix-table .effectiveness-option:hover {
+    background-color: #e9ecef;
+}
+
+/* Matrix Table Radio Checked State - BLUE THEME */
+.matrix-table input[type="radio"]:checked {
+    background-color: var(--fbr-blue);
+    border-color: var(--fbr-blue);
+}
+
+/* Compact Radio and Checkbox Groups - BLUE THEME */
 .radio-group.compact, .checkbox-group.compact {
     display: grid;
     grid-template-columns: 1fr;
@@ -91,13 +156,14 @@
     align-items: center;
 }
 
+/* CHECKED STATE - BLUE THEME */
 .radio-item input:checked:not([disabled]) + label,
 .checkbox-item input:checked:not([disabled]) + label {
-    background-color: #e6f3e9;
-    border-color: #28a745;
+    background-color: #e6f0fa;
+    border-color: var(--fbr-blue);
     font-weight: 600;
-    color: #1a5a2e;
-    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3);
+    color: #003087;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
 }
 
 .radio-item input:checked:not([disabled]) ~ label,
@@ -109,7 +175,7 @@
 .radio-item input:checked:not([disabled]) + label::before,
 .checkbox-item input:checked:not([disabled]) + label::before {
     content: '✓';
-    color: #28a745;
+    color: var(--fbr-blue);
     font-weight: 900;
     margin-right: 0.5rem;
     font-size: 1.1em;
@@ -129,16 +195,7 @@
     opacity: 0.6;
 }
 
-.form-control.disabled-input {
-    background-color: #f7f7f7;
-    cursor: not-allowed;
-    color: #6c757d;
-}
-
-.form-group:has(.form-control.disabled-input) {
-    opacity: 0.6;
-}
-
+/* Question Card Styles */
 .question-card {
     background: #fff;
     padding: clamp(0.75rem, 1.5vw, 1.5rem);
@@ -153,8 +210,10 @@
     font-size: clamp(1rem, 2.5vw, 1.2rem);
     margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
     font-weight: 600;
+    color: #2c3e50;
 }
 
+/* Form Controls */
 .form-label {
     font-weight: 500;
     margin-bottom: 0.25rem;
@@ -174,54 +233,29 @@
 }
 
 .form-control:focus-visible {
-    border-color: #007bff;
+    border-color: var(--fbr-blue);
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     outline: none;
 }
 
-/* Specific textarea styling for qualitative inputs */
+/* Specific styling for improvement textareas */
 .form-control.textarea-qualitative {
-    min-height: 100px;
+    min-height: 120px;
     resize: vertical;
     font-size: clamp(0.9rem, 2vw, 1rem);
     line-height: 1.5;
 }
 
-/* Styling for qualitative sections */
-.lp6_qualitative_section,
-.lp8_qualitative_section,
-.lp10_qualitative_section {
-    border-left: 3px solid #28a745;
-    background-color: #f9fafb;
-    padding: 0.75rem;
-    margin: 1rem 0;
-    transition: opacity 0.3s ease, height 0.3s ease;
-    overflow: hidden;
-}
-
-.textarea-qualitative {
-    min-height: 100px;
-    resize: vertical;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 100%;
-    padding: 0.5rem;
-}
-
-/* Ensure hidden sections are not displayed */
-.lp6_qualitative_section[style*="display: none"],
-.lp8_qualitative_section[style*="display: none"],
-.lp10_qualitative_section[style*="display: none"] {
-    opacity: 0;
-    height: 0;
-    overflow: hidden;
-}
-
+/* Form Groups */
 .form-group {
-    margin-bottom: clamp(0.5rem, 1vw, 1.5rem);
+    margin-bottom: clamp(1rem, 1.5vw, 1.5rem);
 }
 
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Button Styles - BLUE THEME */
 .buttons {
     display: flex;
     justify-content: space-between;
@@ -254,36 +288,20 @@
 
 .btn-back:hover {
     background-color: #5a6268;
+    transform: translateY(-1px);
 }
 
 .btn-next {
-    background-color: #28a745;
+    background-color: var(--fbr-blue);
     color: white;
 }
 
 .btn-next:hover {
-    background-color: #218838;
+    background-color: #0056b3;
+    transform: translateY(-1px);
 }
 
-@media (max-width: 480px) {
-    .buttons {
-        flex-direction: column;
-        gap: clamp(0.375rem, 0.75vw, 0.5rem);
-    }
-
-    .form-control.textarea-qualitative,
-    .textarea-qualitative {
-        min-height: 80px;
-        font-size: 0.9rem;
-    }
-
-    .lp6_qualitative_section,
-    .lp8_qualitative_section,
-    .lp10_qualitative_section {
-        padding: 0.5rem;
-    }
-}
-
+/* Error Styles */
 .error-box {
     background-color: #fff3f3;
     border: 1px solid #f5c6cb;
@@ -312,24 +330,141 @@
     background-color: #fff8f8;
     border: 1px solid #f09595;
     color: #800000;
-    padding: 0.5rem;
+    padding: 0.75rem;
     margin-top: 1rem;
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     font-size: 0.9rem;
     font-weight: 500;
     animation: fadeIn 0.3s ease-in;
+    display: none;
 }
 
-.validation-error-inline[style*="display: none"] {
-    animation: none;
+.validation-error-inline.highlight-error {
+    display: block;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .highlight-error {
-    border-color: #dc3545;
+    border-color: var(--fbr-red);
     box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Section and Subsection Styling */
+.section {
+    margin-bottom: 2.5rem;
+}
+
+.section-title {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.subsection {
+    margin-bottom: 2rem;
+}
+
+.subsection-title {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .matrix-table-container {
+        font-size: 0.8rem;
+    }
+    
+    .matrix-table th,
+    .matrix-table td {
+        padding: 0.5rem;
+    }
+    
+    .matrix-table .function-name,
+    .matrix-table .process-name {
+        min-width: 150px;
+        font-size: 0.8rem;
+    }
+    
+    .matrix-table .challenge-option,
+    .matrix-table .effectiveness-option {
+        min-width: 70px;
+    }
+    
+    .matrix-table .function-name small {
+        font-size: 0.7rem;
+    }
+    
+    .buttons {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .matrix-table {
+        font-size: 0.75rem;
+    }
+    
+    .matrix-table th,
+    .matrix-table td {
+        padding: 0.375rem;
+    }
+    
+    .matrix-table .function-name,
+    .matrix-table .process-name {
+        min-width: 120px;
+    }
+    
+    .matrix-table .challenge-option,
+    .matrix-table .effectiveness-option {
+        min-width: 60px;
+    }
+    
+    .question-card {
+        padding: 1rem;
+    }
+    
+    .form-control.textarea-qualitative {
+        min-height: 100px;
+    }
+}
+
+/* Focus styles for accessibility */
+.matrix-table input[type="radio"]:focus,
+.matrix-table input[type="checkbox"]:focus {
+    outline: 2px solid var(--fbr-blue);
+    outline-offset: 2px;
+}
+
+.radio-item:focus-within,
+.checkbox-item:focus-within {
+    border-color: var(--fbr-blue);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Print Styles */
+@media print {
+    .buttons {
+        display: none;
+    }
+    
+    .matrix-table {
+        break-inside: avoid;
+    }
+    
+    .question-card {
+        break-inside: avoid;
+        border: 1px solid #000;
+    }
 }

@@ -22,6 +22,11 @@
     color: #333;
     margin-bottom: 1rem;
 }
+/* Optional Enhancement: Use a more neutral color for the second section title if desired, 
+   to match the "Feedback on the Questionnaire" tone, but this is purely aesthetic. */
+.section:nth-child(3) .section-title {
+    color: #555; /* A subtle shift for the survey feedback title */
+}
 
 .form-group {
     margin-bottom: 1.5rem;

@@ -5,7 +5,7 @@ from .views import (
     cross_system_perspectives_view, final_remarks_view, confirmation_view, save_progress_view,
     debug_admin_urls_view
 )
-from .views.analytics_dashboard_views import admin_dashboard_view, export_data, api_dashboard_stats 
+from .views.analytics_dashboard_views import admin_dashboard_view, export_data, api_dashboard_stats, export_qualitative_data 
 
 app_name = 'survey'
 
@@ -27,5 +27,6 @@ urlpatterns = [
     path('admin/api/stats/', admin.site.admin_view(api_dashboard_stats), name='api_dashboard_stats'),
     
     # for qualitative data export
-    path('admin/export/qualitative/', admin.site.admin_view(export_data), name='export_qualitative_data'),
+    #path('admin/export/qualitative/', admin.site.admin_view(export_data), name='export_qualitative_data'),
+    path('admin/export/qualitative/', admin.site.admin_view(export_qualitative_data), name='export_qualitative_data'),
 ]

@@ -1,21 +1,17 @@
-<!-- survey/templates/survey/cross_system_perspectives.html -->
 {% extends "survey/base.html" %}
 {% load static %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/cross_system_perspectives_styles.css' %}">
-    <script src="{% static 'js/cross_system_perspectives_script.js' %}" defer></script>
+    <link rel="stylesheet" href="{% static 'css/cross_systems_styles.css' %}">
+    <script src="{% static 'js/cross_systems_script.js' %}"></script>
 {% endblock %}
 
-<!-- {% block progress_width %}90%{% endblock %} -->
-<!-- {% block current_step %}5{% endblock %} -->
-
 {% block content %}
-<h1 class="page-title">Cross-System Perspectives</h1>
+<h1 class="page-title">Cross-Systems Perspectives</h1>
 
 <div class="info-box">
-    <p>This optional section collects your expert insights on coordination between tax and customs systems.</p>
-    <p><strong>Note:</strong> All questions in this section are optional. You may skip any or all questions.</p>
+    <p>This final section focuses on the **coordination and integration** of policies and data between the two main domains: **Tax (IRIS)** and **Customs (WeBOC/PSW)**.</p>
+    <p>Your feedback here is critical for identifying systemic friction points across FBR's operations.</p>
 </div>
 
 {% if error %}
@@ -25,57 +21,52 @@
 </div>
 {% endif %}
 
-<form method="POST" id="crossSystemForm" novalidate
-      data-submit-url="{% url 'survey:cross_system_perspectives' %}"
-      data-csrf-token="{{ csrf_token }}"
-      data-skip-redirect-url="{% url 'survey:final_remarks' %}"
-      data-back-url="{% url 'survey:role_specific_questions' %}">
+<form method="POST" id="crossSystemsForm" novalidate>
     {% csrf_token %}
 
     <div class="section">
-        <h2 class="section-title">🔄 Cross-System Coordination</h2>
-        <p class="section-description">Share your perspectives on the integration and coordination between Pakistan's tax and customs digital systems.</p>
+        <h2 class="section-title">🔗 Tax-Customs Integration and Policy Alignment</h2>
+        <p class="section-description">Please rate your experiences regarding the consistency and coordination between FBR's Tax and Customs functions.</p>
 
-        <!-- XS1 -->
         <div class="question-card">
-            <div class="question-text">XS1. From your expert viewpoint, what is the most significant gap in coordination between Pakistan's tax (IRIS) and customs (WeBOC/PSW) digital systems?</div>
-            <div class="form-group">
-                <textarea name="xs1_coordination_gap" class="form-control" rows="5"
-                          placeholder="Describe the most significant coordination gap you've observed..."
-                          aria-describedby="xs1_char_count">{% if cross_system_answers.xs1_coordination_gap %}{{ cross_system_answers.xs1_coordination_gap }}{% endif %}</textarea>
-                <div class="char-counter" id="xs1_char_count">0/1000 characters</div>
+            <div class="question-text">XS1. When handling matters that span both Customs and Tax (e.g., trade transactions subject to sales tax/FED), how often do you encounter **discrepancies, inconsistencies, or delays** in the data shared or reconciled between the two systems (IRIS vs. WeBOC/PSW)?</div>
+            <div class="radio-group compact">
+                {% for value, label in xs1_options %}
+                <div class="radio-item">
+                    <input type="radio" id="xs1_{{ value }}" name="xs1_data_discrepancy" value="{{ value }}" required
+                           {% if cross_systems_answers.xs1_data_discrepancy == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="xs1_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="xs1_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for XS1.
             </div>
         </div>
 
-        <!-- XS2 -->
         <div class="question-card">
-            <div class="question-text">XS2. What single change would most improve the experience for businesses navigating both tax and customs compliance?</div>
-            <div class="form-group">
-                <textarea name="xs2_single_change" class="form-control" rows="5"
-                          placeholder="Describe the most impactful change..."
-                          aria-describedby="xs2_char_count">{% if cross_system_answers.xs2_single_change %}{{ cross_system_answers.xs2_single_change }}{% endif %}</textarea>
-                <div class="char-counter" id="xs2_char_count">0/1000 characters</div>
+            <div class="question-text">XS2. How consistent is the **legal and policy interpretation** applied by FBR in cases that overlap Tax and Customs jurisdictions (e.g., valuation rules, classification, exemptions)?</div>
+            <div class="radio-group compact">
+                {% for value, label in xs2_options %}
+                <div class="radio-item">
+                    <input type="radio" id="xs2_{{ value }}" name="xs2_policy_consistency" value="{{ value }}" required
+                           {% if cross_systems_answers.xs2_policy_consistency == value %}checked{% endif %}
+                           aria-required="true">
+                    <label for="xs2_{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-
-        <!-- XS3 -->
-        <div class="question-card">
-            <div class="question-text">XS3. Any other systemic feedback or recommendations for FBR's digital transformation?</div>
-            <div class="form-group">
-                <textarea name="xs3_systemic_feedback" class="form-control" rows="5"
-                          placeholder="Share any additional systemic feedback or recommendations..."
-                          aria-describedby="xs3_char_count">{% if cross_system_answers.xs3_systemic_feedback %}{{ cross_system_answers.xs3_systemic_feedback }}{% endif %}</textarea>
-                <div class="char-counter" id="xs3_char_count">0/1000 characters</div>
+            <div id="xs2_error_inline" class="validation-error-inline" style="display: none;" role="alert">
+                ⚠️ Please select an option for XS2.
             </div>
         </div>
     </div>
 
-   <div class="buttons">
-      <button type="button" class="btn btn-back" onclick="handleBackNavigation()">← Back</button>
-      <button type="button" class="btn btn-skip" onclick="skipSection()">Skip This Section</button>
-      <button type="submit" class="btn btn-next">Next →</button>
+    <div class="buttons">
+        <button type="button" class="btn btn-back" onclick="handleBackNavigation('{% url 'survey:role_specific_questions' %}')">← Back</button>
+        <button type="button" class="btn btn-skip" onclick="skipSection('{% url 'survey:final_remarks' %}')">Skip This Section</button>
+        <button type="submit" class="btn btn-next">Next →</button>
     </div>
-
-</div>
 </form>
 {% endblock %}

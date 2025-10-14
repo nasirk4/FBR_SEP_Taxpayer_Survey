@@ -1,479 +1,471 @@
+# survey/views/role_specific_questions_views.py
+
 from django.shortcuts import render, redirect
+from django.core.exceptions import ValidationError
+from survey.models import SurveyResponse
 from survey.utils.progress import get_progress_context
 from survey.utils.session_utils import sanitize_input, validate_session_size
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
 def get_role_specific_context(professional_role):
     """Return context for role-specific questions based on professional role"""
-    context = {}
+    context = {'valid_options': {}}
     if professional_role in ['legal', 'both']:
         context.update({
             'lp1_options': [
-                ('very_frequently', 'Very frequently'),
-                ('frequently', 'Frequently'),
-                ('occasionally', 'Occasionally'),
-                ('rarely', 'Rarely'),
-                ('never', 'Never'),
+                ('great_extent', 'To a great extent'),
+                ('considerable_extent', 'To a considerable extent'),
+                ('moderate_extent', 'To a moderate extent'),
+                ('slight_extent', 'To a slight extent'),
+                ('not_at_all', 'Not at all'),
             ],
-            'lp2_options': [
-                ('system_downtime', 'System downtime or slow performance'),
-                ('login_failures', 'Login failures or session timeouts'),
-                ('document_upload_errors', 'Document upload errors'),
-                ('access_issues', 'Inability to access case records or notices'),
-                ('data_mismatches', 'Data mismatches in client records'),
-                ('audit_trail_issues', 'Lack of audit trail for actions taken'),
-                ('vague_notices', 'Vague or inconsistent system-generated notices'),
-                ('client_management', 'Limited functionality for managing multiple clients'),
-                ('other', 'Other (please specify)'),
+            'lp2_functions': [
+                ('Appeal filings before Commissioner', 'S.127', 'appeals_commissioner'),
+                ('Appellate Tribunal representations', 'S.132', 'appellate_tribunal'),
+                ('High Court/Supreme Court references', '', 'high_court'),
+                ('Audit responses & compliance', 'S.177', 'audit_responses'),
+                ('Show cause notice responses', 'S.122', 'show_cause'),
             ],
-            'lp3_options': [
-                ('system_stability', 'System stability and uptime'),
-                ('user_interface', 'User interface for legal filings'),
-                ('document_management', 'Document management and submission'),
-                ('case_tracking', 'Case status tracking and updates'),
-                ('appellate_integration', 'Integration with appellate tribunal systems'),
-                ('legal_research', 'Legal research and database access'),
-                ('notification_system', 'Notification and alert system'),
-                ('other', 'Other (please specify)'),
+            'lp3_functions': [
+                ('Return filing & compliance', 'S.114', 'return_filing'),
+                ('Return amendments & rectifications', '', 'amendments'),
+                ('Withholding statements & compliance', '', 'withholding'),
+                ('Risk assessment procedures', 'S.122A', 'risk_assessment'),
+                ('Tax planning advisory services', '', 'tax_planning'),
             ],
-            'lp4_procedures': [
-                ('Registration', 'registration', ''),
-                ('Return Filing', 'return_filing', ''),
-                ('Refund Claims', 'refund_claims', ''),
-                ('Audit Compliance', 'audit_compliance', ''),
-                ('Appeals', 'appeals', ''),
-                ('Correspondence', 'correspondence', ''),
-            ],
-            'lp5_options': [
-                ('commissioner_appeals', 'Appeal filings before Commissioner (Appeals)'),
-                ('appellate_tribunal', 'Appellate Tribunal representations'),
-                ('high_court', 'High Court/Supreme Court references'),
-                ('audit_response', 'Audit response proceedings'),
-                ('show_cause', 'Show cause notice responses'),
-                ('refund_processing', 'Refund claim processing'),
-                ('settlement', 'Settlement applications'),
-                ('adr', 'Alternate Dispute Resolution (ADR)'),
-                ('other', 'Other (please specify)'),
-            ],
-            'lp6_options': [
-                ('very_efficient', 'Very efficient'),
-                ('efficient', 'Efficient'),
-                ('moderately_efficient', 'Moderately efficient'),
-                ('inefficient', 'Inefficient'),
-                ('very_inefficient', 'Very inefficient'),
-            ],
-            'lp7_options': [
-                ('very_effective', 'Very effective - real-time updates'),
-                ('effective', 'Effective - adequate information'),
-                ('moderately_effective', 'Moderately effective - basic information'),
-                ('ineffective', 'Ineffective - limited access'),
-                ('very_ineffective', 'Very ineffective - no reliable tracking'),
-            ],
-            'lp8_options': [
-                ('very_effective', 'Very effective - timely and clear'),
-                ('effective', 'Effective - adequate with minor issues'),
-                ('moderately_effective', 'Moderately effective - some delays'),
-                ('inefficient', 'Ineffective - frequent delays'),
-                ('very_ineffective', 'Very ineffective - unreliable'),
-            ],
-            'lp9_options': [
-                ('very_accessible', 'Very accessible - comprehensive database'),
-                ('accessible', 'Accessible - adequate resources'),
-                ('moderately_accessible', 'Moderately accessible - basic access'),
-                ('not_very_accessible', 'Not very accessible - limited resources'),
-                ('not_accessible', 'Not accessible at all'),
-            ],
-            'lp10_options': [
-                ('significant_negative', 'Significant negative impact'),
-                ('moderate_negative', 'Moderate negative impact'),
-                ('minor_impact', 'Minor impact'),
-                ('no_impact', 'No impact'),
-                ('positive_impact', 'Positive impact'),
-            ],
-            'lp11_options': [
-                ('very_effective', 'Very effective'),
-                ('effective', 'Effective'),
-                ('moderately_effective', 'Moderately effective'),
-                ('inefficient', 'Ineffective'),
-                ('very_inefficient', 'Very inefficient'),
-            ],
-            'lp12_options': [
-                ('highly_transparent', 'Highly transparent and predictable'),
-                ('mostly_transparent', 'Mostly transparent and predictable'),
-                ('somewhat_transparent', 'Somewhat transparent but unpredictable'),
-                ('often_opaque', 'Often opaque and unpredictable'),
-                ('completely_unpredictable', 'Completely unpredictable'),
-            ],
-            'lp13_options': [
-                ('very_satisfied', 'Very satisfied'),
-                ('satisfied', 'Satisfied'),
-                ('neutral', 'Neutral'),
-                ('dissatisfied', 'Dissatisfied'),
-                ('very_dissatisfied', 'Very dissatisfied'),
+            'lp4_functions': [
+                ('Alternate Dispute Resolution', 'S.134A', 'adr'),
+                ('Settlement procedures', '', 'settlement'),
+                ('e-Payments & refund processing', '', 'epayments'),
+                ('CPR corrections', '', 'cpr_corrections'),
+                ('FBR correspondence management', '', 'correspondence'),
             ],
             'valid_options': {
-                'lp1_technical_issues': ['very_frequently', 'frequently', 'occasionally', 'rarely', 'never'],
-                'lp6_filing_efficiency': ['very_efficient', 'efficient', 'moderately_efficient', 'inefficient', 'very_inefficient'],
-                'lp7_case_tracking': ['very_effective', 'effective', 'moderately_effective', 'ineffective', 'very_ineffective'],
-                'lp8_notice_communication': ['very_effective', 'effective', 'moderately_effective', 'inefficient', 'very_ineffective'],
-                'lp9_law_accessibility': ['very_accessible', 'accessible', 'moderately_accessible', 'not_very_accessible', 'not_accessible'],
-                'lp10_law_change_impact': ['significant_negative', 'moderate_negative', 'minor_impact', 'no_impact', 'positive_impact'],
-                'lp11_adr_effectiveness': ['very_effective', 'effective', 'moderately_effective', 'inefficient', 'very_inefficient'],
-                'lp12_dispute_transparency': ['highly_transparent', 'mostly_transparent', 'somewhat_transparent', 'often_opaque', 'completely_unpredictable'],
-                'lp13_overall_satisfaction': ['very_satisfied', 'satisfied', 'neutral', 'dissatisfied', 'very_dissatisfied'],
+                'lp1_digital_support': ['great_extent', 'considerable_extent', 'moderate_extent', 'slight_extent', 'not_at_all'],
+                'lp2_challenge_levels': ['no_challenge', 'minor_challenge', 'moderate_challenge', 'major_challenge', 'dont_perform'],
+                'lp3_challenge_levels': ['no_challenge', 'minor_challenge', 'moderate_challenge', 'major_challenge', 'dont_perform'],
+                'lp4_challenge_levels': ['no_challenge', 'minor_challenge', 'moderate_challenge', 'major_challenge', 'dont_perform'],
             }
         })
 
     if professional_role in ['customs', 'both']:
         context.update({
-            # CA1: Training
             'ca1_options': [
-                ('both_training', 'Yes - for both WeBOC and PSW'),
-                ('weboc_only', 'Yes - only for WeBOC'),
-                ('psw_only', 'Yes - only for PSW'),
-                ('no_training', 'No training received'),
-            ],
-            'ca1a_options': [
-                ('very_useful', 'Very useful'),
-                ('moderately_useful', 'Moderately useful'),
-                ('slightly_useful', 'Slightly useful'),
-                ('not_useful', 'Not useful'),
-                ('not_at_all_useful', 'Not at all useful'),
+                ('effective_both', 'Yes, effective training on both WeBOC and PSW'),
+                ('needs_improvement', 'Yes, but training needs improvement'),
+                ('no_training', 'No formal training received'),
+                ('not_applicable', 'Not applicable'),
             ],
             'ca2_options': [
-                ('very_well_integrated', 'Very well integrated - seamless data flow'),
-                ('well_integrated', 'Well integrated - minor gaps'),
-                ('moderately_integrated', 'Moderately integrated - some duplication/delays'),
-                ('poorly_integrated', 'Poorly integrated - frequent disruptions'),
-                ('not_integrated', 'Not integrated - systems operate independently'),
+                ('very_well', 'Very well integrated'),
+                ('well', 'Well integrated'),
+                ('moderately', 'Moderately integrated'),
+                ('poorly', 'Poorly integrated'),
+                ('not_integrated', 'Not integrated'),
             ],
-            'ca3_options': [
-                ('psw_significantly_better', 'PSW is significantly more efficient'),
-                ('psw_moderately_better', 'PSW is moderately better but evolving'),
-                ('comparable', 'Both systems have comparable strengths'),
-                ('weboc_reliable', 'WeBOC remains more reliable for core processes'),
-                ('not_sure', 'Not sure/No direct PSW experience'),
+            'ca3_functions': [
+                ('Goods Declaration', 'S.79', 'goods_declaration'),
+                ('Duty Assessment', 'S.81', 'duty_assessment'),
+                ('Cargo Examination', 'S.26', 'cargo_examination'),
+                ('Document Processing', 'S.79(2)', 'document_processing'),
+                ('Transit/Warehousing', 'S.13, S.15', 'transit_warehousing'),
+                ('Record Keeping', 'S.155(6)', 'record_keeping'),
+                ('Audit Compliance', 'S.26A', 'audit_compliance'),
+                ('License Compliance', 'S.155(4)', 'license_compliance'),
             ],
-            'ca4_options': [
-                ('goods_declaration', 'Goods declaration filing'),
-                ('classification', 'Classification under PCT codes'),
-                ('customs_valuation', 'Customs valuation of goods'),
-                ('duty_calculation', 'Duty and tax calculation'),
-                ('document_submission', 'Document submission and verification'),
-                ('cargo_examination', 'Cargo examination coordination'),
-                ('client_registration', 'Client registration/management'),
-                ('refund_processing', 'Refund/drawback processing'),
-                ('no_challenges', 'No significant challenges'),
-                ('other', 'Other (please specify)'),
+            'ca4_processes': [
+                ('Duty assessment', 'duty_assessment'),
+                ('Cargo examination', 'cargo_examination'),
+                ('System reliability', 'system_reliability'),
+                ('Client representation', 'client_representation'),
             ],
             'ca5_options': [
-                ('highly_transparent', 'Highly transparent and predictable'),
-                ('mostly_transparent', 'Mostly transparent with minor issues'),
-                ('somewhat_transparent', 'Somewhat transparent but inconsistent'),
-                ('often_unpredictable', 'Often unpredictable'),
-                ('completely_unpredictable', 'Completely unpredictable'),
+                ('very_positively', 'Very positively'),
+                ('positively', 'Positively'),
+                ('neutral', 'Neutral'),
+                ('negatively', 'Negatively'),
+                ('very_negatively', 'Very negatively'),
             ],
-            'ca6_options': [
-                ('very_efficient', 'Very efficient - minimal delays'),
-                ('efficient', 'Efficient - acceptable timelines'),
-                ('moderately_efficient', 'Moderate - occasional delays'),
-                ('inefficient', 'Inefficient - frequent delays'),
-                ('very_inefficient', 'Very inefficient - major bottlenecks'),
-            ],
-            'ca7_options': [
-                ('very_efficient', 'Very efficient - quick verification'),
-                ('efficient', 'Efficient - reasonable timelines'),
-                ('moderately_efficient', 'Moderate - some delays'),
-                ('inefficient', 'Inefficient - frequent verification delays'),
-                ('very_inefficient', 'Very inefficient - major document processing issues'),
-            ],
-            'ca8_options': [
-                ('very_effective', 'Very effective - seamless multi-agency processing'),
-                ('effective', 'Effective - minor coordination issues'),
-                ('moderately_effective', 'Moderate - some coordination challenges'),
-                ('ineffective', 'Ineffective - frequent coordination problems'),
-                ('very_ineffective', 'Very ineffective - major inter-agency bottlenecks'),
-            ],
-            'ca9_options': [
-                ('very_reliable', 'Very reliable - minimal downtime'),
-                ('reliable', 'Reliable - occasional slowdowns'),
-                ('moderately_reliable', 'Moderate - frequent performance issues'),
-                ('unreliable', 'Unreliable - regular system crashes'),
-                ('very_unreliable', 'Very unreliable - unusable during peaks'),
-            ],
-            'ca10_options': [
-                ('significant_negative', 'Significant negative impact - major operational disruptions'),
-                ('moderate_negative', 'Moderate negative impact - manageable but challenging'),
-                ('minor_impact', 'Minor impact - easily adaptable'),
-                ('no_impact', 'No significant impact'),
-                ('positive_impact', 'Positive impact - improvements in processes'),
-            ],
-            'ca11_options': [
-                ('very_effective', 'Very effective - can fully represent client interests'),
-                ('effective', 'Effective - minor representation limitations'),
-                ('moderately_effective', 'Moderate - some representation challenges'),
-                ('ineffective', 'Ineffective - significant representation barriers'),
-                ('very_ineffective', 'Very ineffective - cannot adequately represent clients'),
-            ],
-            'ca12_options': [
-                ('system_reliability', 'System reliability and uptime'),
-                ('frequent_policy_changes', 'Frequent policy changes'),
-                ('unpredictable_assessments', 'Unpredictable duty assessments'),
-                ('cargo_examination_delays', 'Cargo examination delays'),
-                ('document_processing_bottlenecks', 'Document processing bottlenecks'),
-                ('client_management_challenges', 'Client management challenges'),
-                ('inter_agency_coordination', 'Inter-agency coordination'),
-                ('training_knowledge_gaps', 'Training and knowledge gaps'),
-                ('other', 'Other (please specify)'),
-            ],
-            'ca13_options': [
-                ('system_reliability', 'System reliability and uptime'),
-                ('frequent_policy_changes', 'Frequent policy changes'),
-                ('unpredictable_assessments', 'Unpredictable duty assessments'),
-                ('cargo_examination_delays', 'Cargo examination delays'),
-                ('document_processing_bottlenecks', 'Document processing bottlenecks'),
-                ('client_management_challenges', 'Client management challenges'),
-                ('inter_agency_coordination', 'Inter-agency coordination'),
-                ('training_knowledge_gaps', 'Training and knowledge gaps'),
-                ('other', 'Other'),
+            'ca6_challenge_options': [
+                ('system_issues', 'System reliability and performance issues'),
+                ('policy_changes', 'Frequent policy or procedural changes'),
+                ('assessment_unpredictability', 'Unpredictable assessment outcomes'),
+                ('documentation_delays', 'Documentation processing delays'),
+                ('cargo_bottlenecks', 'Cargo examination bottlenecks'),
+                ('compliance_burden', 'Compliance and record-keeping burden'),
+                ('coordination_issues', 'Inter-agency coordination challenges'),
+                ('training_gaps', 'Training and knowledge gaps'),
             ],
             'valid_options': {
-                'ca1_training_received': ['both_training', 'weboc_only', 'psw_only', 'no_training'],
-                'ca1a_training_usefulness': ['very_useful', 'moderately_useful', 'slightly_useful', 'not_useful', 'not_at_all_useful'],
-                'ca2_psw_weboc_integration': ['very_well_integrated', 'well_integrated', 'moderately_integrated', 'poorly_integrated', 'not_integrated'],
-                'ca3_psw_comparison': ['psw_significantly_better', 'psw_moderately_better', 'comparable', 'weboc_reliable', 'not_sure'],
-                'ca5_duty_assessment': ['highly_transparent', 'mostly_transparent', 'somewhat_transparent', 'often_unpredictable', 'completely_unpredictable'],
-                'ca6_cargo_efficiency': ['very_efficient', 'efficient', 'moderately_efficient', 'inefficient', 'very_inefficient'],
-                'ca7_document_verification': ['very_efficient', 'efficient', 'moderately_efficient', 'inefficient', 'very_inefficient'],
-                'ca8_agency_coordination': ['very_effective', 'effective', 'moderately_effective', 'ineffective', 'very_ineffective'],
-                'ca9_system_reliability': ['very_reliable', 'reliable', 'moderately_reliable', 'unreliable', 'very_unreliable'],
-                'ca10_policy_impact': ['significant_negative', 'moderate_negative', 'minor_impact', 'no_impact', 'positive_impact'],
-                'ca11_client_representation': ['very_effective', 'effective', 'moderately_effective', 'ineffective', 'very_ineffective'],
-                'ca13_biggest_challenge': ['system_reliability', 'frequent_policy_changes', 'unpredictable_assessments', 'cargo_examination_delays', 'document_processing_bottlenecks', 'client_management_challenges', 'inter_agency_coordination', 'training_knowledge_gaps', 'other'],
+                **context['valid_options'],  # Merge with existing valid_options
+                'ca1_training': ['effective_both', 'needs_improvement', 'no_training', 'not_applicable'],
+                'ca2_system_integration': ['very_well', 'well', 'moderately', 'poorly', 'not_integrated'],
+                'ca3_challenge_levels': ['no_challenge', 'minor_challenge', 'moderate_challenge', 'major_challenge', 'not_applicable'],
+                'ca4_effectiveness_levels': ['very_effective', 'effective', 'neutral', 'ineffective', 'very_ineffective'],
+                'ca5_policy_impact': ['very_positively', 'positively', 'neutral', 'negatively', 'very_negatively'],
+                'ca6_biggest_challenge': ['system_issues', 'policy_changes', 'assessment_unpredictability', 'documentation_delays', 'cargo_bottlenecks', 'compliance_burden', 'coordination_issues', 'training_gaps'],
             }
         })
     return context
 
+def preprocess_grid_data(professional_role, role_answers, context_data):
+    """Preprocess grid data for template rendering"""
+    if professional_role in ['legal', 'both']:
+        lp2_functions_with_data = []
+        lp3_functions_with_data = []
+        lp4_functions_with_data = []
+        
+        for function, statute, value in context_data.get('lp2_functions', []):
+            challenge_value = role_answers.get('lp2_challenges', {}).get(value, '')
+            lp2_functions_with_data.append((function, statute, value, challenge_value))
+        
+        for function, statute, value in context_data.get('lp3_functions', []):
+            challenge_value = role_answers.get('lp3_challenges', {}).get(value, '')
+            lp3_functions_with_data.append((function, statute, value, challenge_value))
+            
+        for function, statute, value in context_data.get('lp4_functions', []):
+            challenge_value = role_answers.get('lp4_challenges', {}).get(value, '')
+            lp4_functions_with_data.append((function, statute, value, challenge_value))
+        
+        context_data['lp2_functions_with_data'] = lp2_functions_with_data
+        context_data['lp3_functions_with_data'] = lp3_functions_with_data
+        context_data['lp4_functions_with_data'] = lp4_functions_with_data
+
+    if professional_role in ['customs', 'both']:
+        ca3_functions_with_data = []
+        ca4_processes_with_data = []
+        
+        for function, statute, value in context_data.get('ca3_functions', []):
+            challenge_value = role_answers.get('ca3_challenges', {}).get(value, '')
+            ca3_functions_with_data.append((function, statute, value, challenge_value))
+            
+        for process, value in context_data.get('ca4_processes', []):
+            effectiveness_value = role_answers.get('ca4_effectiveness', {}).get(value, '')
+            ca4_processes_with_data.append((process, value, effectiveness_value))
+        
+        context_data['ca3_functions_with_data'] = ca3_functions_with_data
+        context_data['ca4_processes_with_data'] = ca4_processes_with_data
+    
+    return context_data
+
 def role_specific_questions_view(request):
     """Render the role-specific questions page (step 4)"""
     if not request.session.get('survey_started') or not request.session.get('respondent_info') or not request.session.get('generic_answers'):
+        logger.warning("Invalid session data, redirecting to welcome page")
         return redirect('survey:welcome')
 
     respondent_info = request.session.get('respondent_info', {})
-
-    # Determine professional role based on respondent_info
     professional_roles = respondent_info.get('professional_roles', [])
-    if 'legal' in professional_roles and 'customs' in professional_roles:
-        professional_role = 'both'
-    elif 'legal' in professional_roles:
-        professional_role = 'legal'
-    elif 'customs' in professional_roles:
-        professional_role = 'customs'
-    else:
-        professional_role = ''
+    professional_role = 'both' if 'legal' in professional_roles and 'customs' in professional_roles else professional_roles[0] if professional_roles else ''
+    
+    logger.debug(f"Professional role: {professional_role}, Roles: {professional_roles}")
+
+    if not professional_role:
+        logger.error("No valid professional role found in session")
+        return render(request, 'survey/role_specific.html', {
+            'error': "No professional role specified. Please start the survey again.",
+            **get_progress_context(current_step=4)
+        })
 
     context_data = get_role_specific_context(professional_role)
+    role_answers = request.session.get('role_specific_answers', {})
 
-    # Preprocess lp4_procedures to include comments
-    if professional_role in ['legal', 'both']:
-        role_answers = request.session.get('role_specific_answers', {})
-        comments = role_answers.get('lp4_procedures', {}).get('comments', {})
-        lp4_procedures = context_data['lp4_procedures']
-        context_data['lp4_procedures'] = [
-            (procedure, value, comments.get(value, '')) for procedure, value, _ in lp4_procedures
-        ]
+    # Validate and clean lp5_tax_types in session to prevent invalid JSON
+    if 'lp5_tax_types' in role_answers:
+        try:
+            if isinstance(role_answers['lp5_tax_types'], str):
+                json.loads(role_answers['lp5_tax_types'])
+                role_answers['lp5_tax_types'] = json.loads(role_answers['lp5_tax_types'])
+            elif not isinstance(role_answers['lp5_tax_types'], dict):
+                logger.warning(f"Invalid lp5_tax_types in session: {role_answers['lp5_tax_types']}, resetting to an empty dict")
+                role_answers['lp5_tax_types'] = {}
+        except json.JSONDecodeError:
+            logger.warning(f"Invalid JSON in lp5_tax_types: {role_answers['lp5_tax_types']}, resetting to an empty dict")
+            role_answers['lp5_tax_types'] = {}
+    else:
+        role_answers['lp5_tax_types'] = {}
+
+    # Convert Python dict to proper JSON string for the template
+    try:
+        lp5_tax_types_json = json.dumps(role_answers['lp5_tax_types'])
+        logger.debug(f"LP5 tax types JSON: {lp5_tax_types_json}")
+    except Exception as e:
+        logger.error(f"Error serializing LP5 tax types: {e}")
+        lp5_tax_types_json = "{}"
+    
+    context_data = preprocess_grid_data(professional_role, role_answers, context_data)
 
     if request.method == 'POST':
         errors = []
         role_answers = request.session.get('role_specific_answers', {})
 
+        # Retrieve or create SurveyResponse instance
+        email = respondent_info.get('email', '')
+        survey_response = SurveyResponse.objects.filter(email=email).first()
+        if not survey_response:
+            survey_response = SurveyResponse(
+                full_name=respondent_info.get('full_name', ''),
+                email=email,
+                mobile=respondent_info.get('mobile', ''),
+                province=respondent_info.get('province', ''),
+                district=respondent_info.get('district', ''),
+                professional_role=','.join(professional_roles),
+                experience_legal=respondent_info.get('experience_legal', ''),
+                experience_customs=respondent_info.get('experience_customs', ''),
+                practice_areas=','.join(respondent_info.get('practice_areas', [])),
+                kii_consent=respondent_info.get('kii_consent', ''),
+                g1_policy_impact={},
+                g2_system_impact={},
+                g3_technical_issues='',
+                g4_disruption=None,
+                g5_digital_literacy='',
+                lp1_digital_support='',
+                lp2_challenges={},
+                lp3_challenges={},
+                lp4_challenges={},
+                lp5_tax_types={},
+                lp5_visible=False,
+                lp6_priority_improvement='',
+                ca1_training='',
+                ca2_system_integration='',
+                ca3_challenges={},
+                ca4_effectiveness={},
+                ca5_policy_impact='',
+                ca6_biggest_challenge='',
+                ca6_improvement='',
+                cross_system_answers={},
+                final_remarks='',
+                submission_date=None
+            )
+        logger.debug(f"SurveyResponse for {email}: lp6={survey_response.lp6_priority_improvement}, ca6_improvement={survey_response.ca6_improvement}")
+
         if professional_role in ['legal', 'both']:
-            required_legal_fields = [
-                'lp1_technical_issues', 'lp6_filing_efficiency', 'lp7_case_tracking',
-                'lp8_notice_communication', 'lp9_law_accessibility', 'lp10_law_change_impact',
-                'lp11_adr_effectiveness', 'lp12_dispute_transparency', 'lp13_overall_satisfaction'
-            ]
-            for field in required_legal_fields:
-                value = request.POST.get(field, '').strip()
-                if not value:
-                    errors.append(f"Missing required field: {field.replace('_', ' ').title()} (LP{field[2]})")
-                elif field in context_data.get('valid_options', {}) and value not in context_data['valid_options'][field]:
-                    errors.append(f"Invalid value for {field.replace('_', ' ').title()} (LP{field[2]})")
-                role_answers[field] = value
+            # LP1: Overall Digital Support
+            lp1_value = request.POST.get('lp1_digital_support', '').strip()
+            if 'lp1_digital_support' in context_data['valid_options']:
+                if not lp1_value:
+                    errors.append("Please select an option for LP1 (Overall Digital Support)")
+                elif lp1_value not in context_data['valid_options']['lp1_digital_support']:
+                    errors.append("Invalid value for LP1")
+                else:
+                    role_answers['lp1_digital_support'] = lp1_value
+                    survey_response.lp1_digital_support = lp1_value
+            else:
+                logger.warning("LP1 validation skipped: lp1_digital_support not in valid_options")
 
-            # LP1 and LP2: Technical issues and common problems
-            lp1_value = request.POST.get('lp1_technical_issues', '')
-            lp2_problems = request.POST.getlist('lp2_common_problems', [])
-            lp2_required = lp1_value in ['very_frequently', 'frequently']
-            if lp2_required and not lp2_problems:
-                errors.append("Please select at least one technical issue for LP2")
-            if 'other' in lp2_problems and not request.POST.get('lp2_other_text', '').strip():
-                errors.append("Please specify details for 'Other' in LP2")
-            role_answers['lp2_common_problems'] = lp2_problems
-            role_answers['lp2_other_text'] = sanitize_input(request.POST.get('lp2_other_text', ''))
+            # LP2: Representation & Appeals Grid
+            lp2_challenges = {}
+            for function_data in context_data.get('lp2_functions', []):
+                function_value = function_data[2]
+                challenge_value = request.POST.get(f'lp2_{function_value}', '').strip()
+                if not challenge_value:
+                    errors.append("Please complete all rows in LP2 (Representation & Appeals)")
+                    break
+                elif challenge_value not in context_data['valid_options'].get('lp2_challenge_levels', []):
+                    errors.append(f"Invalid value for {function_data[0]} in LP2")
+                    break
+                lp2_challenges[function_value] = challenge_value
+            role_answers['lp2_challenges'] = lp2_challenges
+            survey_response.lp2_challenges = lp2_challenges
 
-            # LP3: Improvement areas
-            lp3_improvements = request.POST.getlist('lp3_improvement_areas', [])
-            if not lp3_improvements:
-                errors.append("Please select at least one improvement area for LP3")
-            elif len(lp3_improvements) > 3:
-                errors.append("Please select no more than 3 options for LP3")
-            if 'other' in lp3_improvements and not request.POST.get('lp3_other_text', '').strip():
-                errors.append("Please specify details for 'Other' in LP3")
-            role_answers['lp3_improvement_areas'] = lp3_improvements
-            role_answers['lp3_other_text'] = sanitize_input(request.POST.get('lp3_other_text', ''))
+            # LP3: Compliance & Advisory Grid
+            lp3_challenges = {}
+            for function_data in context_data.get('lp3_functions', []):
+                function_value = function_data[2]
+                challenge_value = request.POST.get(f'lp3_{function_value}', '').strip()
+                if not challenge_value:
+                    errors.append("Please complete all rows in LP3 (Compliance & Advisory)")
+                    break
+                elif challenge_value not in context_data['valid_options'].get('lp3_challenge_levels', []):
+                    errors.append(f"Invalid value for {function_data[0]} in LP3")
+                    break
+                lp3_challenges[function_value] = challenge_value
+            role_answers['lp3_challenges'] = lp3_challenges
+            survey_response.lp3_challenges = lp3_challenges
 
-            # LP4: Procedures matrix
-            lp4_procedures = ['registration', 'return_filing', 'refund_claims', 'audit_compliance', 'appeals', 'correspondence']
-            lp4_data = {'sales': [], 'income': [], 'comments': {}}
-            lp4_has_selection = False
-            for procedure in lp4_procedures:
-                if request.POST.get(f'lp4_{procedure}_sales'):
-                    lp4_data['sales'].append(procedure)
-                    lp4_has_selection = True
-                if request.POST.get(f'lp4_{procedure}_income'):
-                    lp4_data['income'].append(procedure)
-                    lp4_has_selection = True
-                comment = sanitize_input(request.POST.get(f'lp4_{procedure}_comment', ''))
-                if comment:
-                    lp4_data['comments'][procedure] = comment
-            lp4_other_procedure = sanitize_input(request.POST.get('lp4_other_procedure', ''))
-            lp4_other_sales = bool(request.POST.get('lp4_other_sales'))
-            lp4_other_income = bool(request.POST.get('lp4_other_income'))
-            if lp4_other_procedure and not (lp4_other_sales or lp4_other_income):
-                errors.append("Please select at least one tax type for the 'Other' procedure in LP4")
-            if lp4_other_procedure or lp4_other_sales or lp4_other_income:
-                lp4_has_selection = True
-            role_answers['lp4_procedures'] = lp4_data
-            role_answers['lp4_other_procedure'] = lp4_other_procedure
-            role_answers['lp4_other_sales'] = lp4_other_sales
-            role_answers['lp4_other_income'] = lp4_other_income
-            role_answers['lp4_other_comment'] = sanitize_input(request.POST.get('lp4_other_comment', ''))
-            if not lp4_has_selection:
-                errors.append("Please select at least one procedure or tax type in LP4")
+            # LP4: Dispute Resolution & Documentation Grid
+            lp4_challenges = {}
+            for function_data in context_data.get('lp4_functions', []):
+                function_value = function_data[2]
+                challenge_value = request.POST.get(f'lp4_{function_value}', '').strip()
+                if not challenge_value:
+                    errors.append("Please complete all rows in LP4 (Dispute Resolution & Documentation)")
+                    break
+                elif challenge_value not in context_data['valid_options'].get('lp4_challenge_levels', []):
+                    errors.append(f"Invalid value for {function_data[0]} in LP4")
+                    break
+                lp4_challenges[function_value] = challenge_value
+            role_answers['lp4_challenges'] = lp4_challenges
+            survey_response.lp4_challenges = lp4_challenges
 
-            # LP5: Representation challenges
-            lp5_challenges = request.POST.getlist('lp5_representation_challenges', [])
-            if not lp5_challenges:
-                errors.append("Please select at least one challenge for LP5")
-            elif len(lp5_challenges) > 3:
-                errors.append("Please select no more than 3 options for LP5")
-            if 'other' in lp5_challenges and not request.POST.get('lp5_other_text', '').strip():
-                errors.append("Please specify details for 'Other' in LP5")
-            role_answers['lp5_representation_challenges'] = lp5_challenges
-            role_answers['lp5_other_text'] = sanitize_input(request.POST.get('lp5_other_text', ''))
+            # LP5: Tax-Type Impact (conditional)
+            lp5_visible = request.POST.get('lp5_visible', '0') == '1'
+            lp5_tax_types = {}
+            if lp5_visible:
+                all_challenges = {**lp2_challenges, **lp3_challenges, **lp4_challenges}
+                challenging_functions = [
+                    func for func, level in all_challenges.items()
+                    if level in ['moderate_challenge', 'major_challenge']
+                ]
+                for function in challenging_functions:
+                    income_tax = bool(request.POST.get(f'lp5_{function}_income', ''))
+                    sales_tax = bool(request.POST.get(f'lp5_{function}_sales', ''))
+                    if not income_tax and not sales_tax:
+                        errors.append(f"Please indicate tax types for {function} in LP5")
+                        break
+                    lp5_tax_types[function] = {
+                        'income_tax': income_tax,
+                        'sales_tax': sales_tax
+                    }
+            role_answers['lp5_tax_types'] = lp5_tax_types
+            survey_response.lp5_tax_types = lp5_tax_types
+            role_answers['lp5_visible'] = lp5_visible
+            survey_response.lp5_visible = lp5_visible
 
-            # LP6: Qualitative validation
-            lp6_visible = request.POST.get('lp6_qualitative_visible', '0') == '1'
-            lp6_text = request.POST.get('lp6_qualitative_text', '').strip()
-            if lp6_visible and not lp6_text:
-                errors.append("Please provide details for the filing challenges in LP6")
-            role_answers['lp6_qualitative_text'] = sanitize_input(lp6_text)
-            role_answers['lp6_qualitative_visible'] = lp6_visible
-
-            # LP8: Qualitative validation
-            lp8_visible = request.POST.get('lp8_qualitative_visible', '0') == '1'
-            lp8_text = request.POST.get('lp8_qualitative_text', '').strip()
-            if lp8_visible and not lp8_text:
-                errors.append("Please provide details for the communication challenges in LP8")
-            role_answers['lp8_qualitative_text'] = sanitize_input(lp8_text)
-            role_answers['lp8_qualitative_visible'] = lp8_visible
-
-            # LP10: Qualitative validation
-            lp10_visible = request.POST.get('lp10_qualitative_visible', '0') == '1'
-            lp10_text = request.POST.get('lp10_qualitative_text', '').strip()
-            if lp10_visible and not lp10_text:
-                errors.append("Please provide details for the impact of tax law changes in LP10")
-            role_answers['lp10_qualitative_text'] = sanitize_input(lp10_text)
-            role_answers['lp10_qualitative_visible'] = lp10_visible
-
-            # Final Feedback (optional)
-            role_answers['final_feedback'] = sanitize_input(request.POST.get('final_feedback', ''))
+            # LP6: Priority Improvement (optional)
+            lp6_improvement = sanitize_input(request.POST.get('lp6_priority_improvement', '')).strip()
+            logger.debug(f"LP6 value: {lp6_improvement}")
+            role_answers['lp6_priority_improvement'] = lp6_improvement
+            survey_response.lp6_priority_improvement = lp6_improvement
 
         if professional_role in ['customs', 'both']:
-            # Required radio fields
-            required_customs_fields = [
-                'ca1_training_received', 'ca2_psw_weboc_integration', 'ca3_psw_comparison',
-                'ca5_duty_assessment', 'ca6_cargo_efficiency', 'ca7_document_verification',
-                'ca8_agency_coordination', 'ca9_system_reliability', 'ca10_policy_impact',
-                'ca11_client_representation', 'ca13_biggest_challenge'
-            ]
-            for field in required_customs_fields:
-                value = request.POST.get(field, '').strip()
-                if not value:
-                    errors.append(f"Missing required field: {field.replace('_', ' ').title()} (CA{field[2] if field[2].isdigit() else field[2:4]})")
-                elif field in context_data.get('valid_options', {}) and value not in context_data['valid_options'][field]:
-                    errors.append(f"Invalid value for {field.replace('_', ' ').title()} (CA{field[2] if field[2].isdigit() else field[2:4]})")
-                role_answers[field] = value
+            # CA1: Training
+            ca1_value = request.POST.get('ca1_training', '').strip()
+            if 'ca1_training' in context_data['valid_options']:
+                if not ca1_value:
+                    errors.append("Please select an option for CA1 (Training)")
+                elif ca1_value not in context_data['valid_options']['ca1_training']:
+                    errors.append("Invalid value for CA1")
+                else:
+                    role_answers['ca1_training'] = ca1_value
+                    survey_response.ca1_training = ca1_value
+            else:
+                logger.warning("CA1 validation skipped: ca1_training not in valid_options")
 
-            # CA1a: Conditional validation
-            ca1_training = request.POST.get('ca1_training_received', '')
-            ca1a_visible = request.POST.get('ca1a_visible', '0') == '1'
-            ca1a_value = request.POST.get('ca1a_training_usefulness', '').strip()
-            if ca1_training != 'no_training' and ca1a_visible and not ca1a_value:
-                errors.append("Please select an option for CA1a")
-            elif ca1a_value and ca1a_value not in context_data['valid_options']['ca1a_training_usefulness']:
-                errors.append("Invalid value for CA1a")
-            role_answers['ca1a_training_usefulness'] = ca1a_value if ca1_training != 'no_training' else ''
+            # CA2: System Integration
+            ca2_value = request.POST.get('ca2_system_integration', '').strip()
+            if 'ca2_system_integration' in context_data['valid_options']:
+                if not ca2_value:
+                    errors.append("Please select an option for CA2 (System Integration)")
+                elif ca2_value not in context_data['valid_options']['ca2_system_integration']:
+                    errors.append("Invalid value for CA2")
+                else:
+                    role_answers['ca2_system_integration'] = ca2_value
+                    survey_response.ca2_system_integration = ca2_value
+            else:
+                logger.warning("CA2 validation skipped: ca2_system_integration not in valid_options")
 
-            # CA4: Procedure challenges (multiple selection)
-            ca4_challenges = request.POST.getlist('ca4_procedure_challenges', [])
-            if not ca4_challenges:
-                errors.append("Please select at least one option for CA4")
-            elif 'no_challenges' in ca4_challenges and len(ca4_challenges) > 1:
-                errors.append("Cannot select 'No significant challenges' with other options in CA4")
-            elif len(ca4_challenges) > 3 and 'no_challenges' not in ca4_challenges:
-                errors.append("Please select no more than 3 options for CA4")
-            if 'other' in ca4_challenges and not request.POST.get('ca4_other_text', '').strip():
-                errors.append("Please specify details for 'Other' in CA4")
-            role_answers['ca4_procedure_challenges'] = ca4_challenges
-            role_answers['ca4_other_text'] = sanitize_input(request.POST.get('ca4_other_text', ''))
+            # CA3: Customs Function Challenges Grid
+            ca3_challenges = {}
+            ca3_has_errors = False
+            for function_data in context_data.get('ca3_functions', []):
+                function_value = function_data[2]
+                challenge_value = request.POST.get(f'ca3_{function_value}', '').strip()
+                if not challenge_value:
+                    if not ca3_has_errors:
+                        errors.append("Please complete all rows in CA3 (Customs Function Challenges)")
+                        ca3_has_errors = True
+                elif challenge_value not in context_data['valid_options'].get('ca3_challenge_levels', []):
+                    if not ca3_has_errors:
+                        errors.append(f"Invalid value for {function_data[0]} in CA3")
+                        ca3_has_errors = True
+                ca3_challenges[function_value] = challenge_value
+            role_answers['ca3_challenges'] = ca3_challenges
+            survey_response.ca3_challenges = ca3_challenges
 
-            # CA12: Operational challenges (multiple selection)
-            ca12_challenges = request.POST.getlist('ca12_operational_challenges', [])
-            if not ca12_challenges:
-                errors.append("Please select at least one operational challenge for CA12")
-            if 'other' in ca12_challenges and not request.POST.get('ca12_other_text', '').strip():
-                errors.append("Please specify details for 'Other' in CA12")
-            role_answers['ca12_operational_challenges'] = ca12_challenges
-            role_answers['ca12_other_text'] = sanitize_input(request.POST.get('ca12_other_text', ''))
+            # CA4: Process Effectiveness Grid
+            ca4_effectiveness = {}
+            for process_data in context_data.get('ca4_processes', []):
+                process_value = process_data[1]
+                effectiveness_value = request.POST.get(f'ca4_{process_value}', '').strip()
+                if not effectiveness_value:
+                    errors.append("Please complete all rows in CA4 (Process Effectiveness)")
+                    break
+                elif effectiveness_value not in context_data['valid_options'].get('ca4_effectiveness_levels', []):
+                    errors.append(f"Invalid value for {process_data[0]} in CA4")
+                    break
+                ca4_effectiveness[process_value] = effectiveness_value
+            role_answers['ca4_effectiveness'] = ca4_effectiveness
+            survey_response.ca4_effectiveness = ca4_effectiveness
 
-            # CA13: Biggest challenge (single selection with optional textarea)
-            ca13_biggest_challenge = request.POST.get('ca13_biggest_challenge', '').strip()
-            ca13_other_text = request.POST.get('ca13_other_text', '').strip()
-            if ca13_biggest_challenge == 'other' and not ca13_other_text:
-                errors.append("Please specify details for 'Other' in CA13")
-            role_answers['ca13_biggest_challenge'] = ca13_biggest_challenge
-            role_answers['ca13_other_text'] = sanitize_input(ca13_other_text)
+            # CA5: Policy Impact
+            ca5_value = request.POST.get('ca5_policy_impact', '').strip()
+            if 'ca5_policy_impact' in context_data['valid_options']:
+                if not ca5_value:
+                    errors.append("Please select an option for CA5 (Policy Impact)")
+                elif ca5_value not in context_data['valid_options']['ca5_policy_impact']:
+                    errors.append("Invalid value for CA5")
+                else:
+                    role_answers['ca5_policy_impact'] = ca5_value
+                    survey_response.ca5_policy_impact = ca5_value
+            else:
+                logger.warning("CA5 validation skipped: ca5_policy_impact not in valid_options")
+
+            # CA6: Combined Challenge & Improvement
+            ca6_challenge = request.POST.get('ca6_biggest_challenge', '').strip()
+            ca6_improvement = sanitize_input(request.POST.get('ca6_improvement', '')).strip()
+            if 'ca6_biggest_challenge' in context_data['valid_options']:
+                if not ca6_challenge:
+                    errors.append("Please select your biggest challenge in CA6")
+                elif ca6_challenge not in context_data['valid_options']['ca6_biggest_challenge']:
+                    errors.append("Invalid value for CA6 challenge")
+            else:
+                logger.warning("CA6 validation skipped: ca6_biggest_challenge not in valid_options")
+            logger.debug(f"CA6 improvement value: {ca6_improvement}")
+            role_answers['ca6_biggest_challenge'] = ca6_challenge
+            role_answers['ca6_improvement'] = ca6_improvement
+            survey_response.ca6_biggest_challenge = ca6_challenge
+            survey_response.ca6_improvement = ca6_improvement
 
         if errors:
             logger.warning(f"Validation errors in role_specific_questions: {errors}")
+            context_data = preprocess_grid_data(professional_role, role_answers, context_data)
             context = get_progress_context(current_step=4)
             context.update({
                 'professional_role': professional_role,
                 'is_legal': professional_role in ['legal', 'both'],
                 'is_customs': professional_role in ['customs', 'both'],
                 'role_specific_answers': role_answers,
-                'submitted_ca1': role_answers.get('ca1_training_received', ''),
+                'lp5_tax_types_json': json.dumps(role_answers['lp5_tax_types']),
                 'error': "Please correct the following errors:\n" + "\n".join(errors)
             })
             context.update(context_data)
             return render(request, 'survey/role_specific.html', context)
 
-        validate_session_size(request)
-        request.session['role_specific_answers'] = role_answers
-        request.session.modified = True
-        return redirect('survey:cross_system_perspectives')
+        try:
+            logger.debug(f"Before saving session: role_specific_answers={role_answers}")
+            survey_response.save()
+            logger.debug(f"Saved role-specific answers for {email}: lp6={survey_response.lp6_priority_improvement}, ca6_improvement={survey_response.ca6_improvement}")
+            request.session['role_specific_answers'] = role_answers
+            request.session.modified = True
+            logger.debug(f"After saving session: role_specific_answers={request.session['role_specific_answers']}")
+            validate_session_size(request)
+            return redirect('survey:cross_system_perspectives')
+        except Exception as e:
+            logger.error(f"Error saving role-specific answers: {str(e)}", exc_info=True)
+            context_data = preprocess_grid_data(professional_role, role_answers, context_data)
+            context = get_progress_context(current_step=4)
+            context.update({
+                'professional_role': professional_role,
+                'is_legal': professional_role in ['legal', 'both'],
+                'is_customs': professional_role in ['customs', 'both'],
+                'role_specific_answers': role_answers,
+                'lp5_tax_types_json': json.dumps(role_answers['lp5_tax_types']),
+                'error': f"Error saving data: {str(e)}"
+            })
+            context.update(context_data)
+            return render(request, 'survey/role_specific.html', context)
 
     context = get_progress_context(current_step=4, total_steps=6)
     context.update({
         'professional_role': professional_role,
         'is_legal': professional_role in ['legal', 'both'],
         'is_customs': professional_role in ['customs', 'both'],
-        'role_specific_answers': request.session.get('role_specific_answers', {}),
-        'submitted_ca1': request.session.get('role_specific_answers', {}).get('ca1_training_received', '')
+        'role_specific_answers': role_answers,
+        'lp5_tax_types_json': lp5_tax_types_json
     })
     context.update(context_data)
     return render(request, 'survey/role_specific.html', context)

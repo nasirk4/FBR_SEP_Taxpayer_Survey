@@ -3,14 +3,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('crossSystemForm');
     if (!form) return;
 
-    // Get URLs and CSRF token from data attributes
-    const submitUrl = form.dataset.submitUrl;
-    const csrfToken = form.dataset.csrfToken;
-    const skipRedirectUrl = form.dataset.skipRedirectUrl;
-    const backUrl = form.dataset.backUrl;
+    // Get CSRF token from the first hidden input with the name 'csrfmiddlewaretoken'
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    // The submit URL is the action attribute of the form
+    const submitUrl = form.action;
 
-    // Global flag to track if the form is already submitting after character limit confirmation
-    let isSubmitting = false;
+    // --- Helper Functions for Modals and Errors ---
 
     // Helper function to create/get inline error box
     function createErrorBox() {
@@ -20,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
         errorBox.style.display = 'none';
         const section = document.querySelector('.section');
         if (section) {
+            // Prepend the error box at the top of the main section
             section.prepend(errorBox);
         }
         return errorBox;
@@ -76,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="confirmation-modal-content">
                 <h2 id="confirmation-modal-title" class="confirmation-modal-title">Confirm Skip</h2>
                 <p id="confirmation-modal-message" class="confirmation-modal-message">
-                    Are you sure you want to skip this optional section? You can still provide this feedback later if you change your mind.
+                    Are you sure you want to skip this optional section? This is the final main section before concluding the survey.
                 </p>
                 <div class="modal-buttons">
                     <button type="button" class="btn btn-confirm" aria-label="Confirm">Confirm</button>
@@ -89,24 +88,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const confirmButton = modal.querySelector('.btn-confirm');
         const cancelButton = modal.querySelector('.btn-cancel');
 
-        // Focus on cancel button by default for accessibility
         cancelButton.focus();
 
-        // Handle confirm button
         confirmButton.addEventListener('click', () => {
             modal.remove();
             onConfirm();
         });
 
-        // Handle cancel button
         cancelButton.addEventListener('click', () => modal.remove());
 
-        // Close modal on clicking outside
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.remove();
         });
 
-        // Close modal on Escape key
         document.addEventListener('keydown', function handleEscape(e) {
             if (e.key === 'Escape') {
                 modal.remove();
@@ -131,42 +125,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Initial error box scrolling (for server-side errors, if any)
-    const initialErrorBox = document.getElementById('error-box');
-    if (initialErrorBox) {
-        setTimeout(() => initialErrorBox.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-    }
-
-    // Character counters setup
-    const textareas = [
-        { element: document.querySelector('textarea[name="xs1_coordination_gap"]'), counter: document.getElementById('xs1_char_count') },
-        { element: document.querySelector('textarea[name="xs2_single_change"]'), counter: document.getElementById('xs2_char_count') },
-        { element: document.querySelector('textarea[name="xs3_systemic_feedback"]'), counter: document.getElementById('xs3_char_count') }
-    ];
-
-    textareas.forEach(({ element, counter }) => {
-        if (element && counter) {
-            updateCharCounter(element, counter);
-            element.addEventListener('input', function() {
-                updateCharCounter(this, counter);
-            });
+    // --- Skip section functionality (Kept the skip logic) ---
+    window.skipSection = function(redirectUrl) {
+        if (!redirectUrl) {
+            console.error('Skip redirect URL not provided.');
+            return;
         }
-    });
 
-    function updateCharCounter(textarea, counter) {
-        const length = textarea.value.length;
-        const maxLength = 1000;
-        counter.textContent = `${length}/${maxLength} characters`;
-        
-        if (length > maxLength * 0.9) {
-            counter.style.color = length > maxLength ? '#dc3545' : '#ffc107';
-        } else {
-            counter.style.color = '#666';
-        }
-    }
-
-    // Skip section functionality
-    window.skipSection = function() {
         createConfirmationModal(() => {
             const formData = new FormData();
             formData.append('skip_section', 'true');
@@ -187,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(data => {
                 if (data.status === 'success') {
-                    window.location.href = skipRedirectUrl;
+                    window.location.href = redirectUrl; // Redirect to final_remarks
                 } else {
                     showError(data.message || 'Error skipping section', 'modal');
                 }
@@ -199,8 +164,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
-    // Handle back navigation (Saves draft then navigates)
-    window.handleBackNavigation = function() {
+    // --- Handle back navigation (Saves draft then navigates) (Kept the save draft logic) ---
+    window.handleBackNavigation = function(backUrl) {
+        if (!backUrl) {
+            console.error('Back URL not provided.');
+            return;
+        }
+        
         const formData = new FormData(form);
         formData.append('save_draft', 'true');
 
@@ -214,83 +184,29 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                // Draft saving failed, but we still try to navigate back
+                console.warn('Draft save failed, attempting to navigate back anyway.');
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                window.location.href = backUrl;
-            } else {
-                showError(data.message || 'Error saving draft before navigation.', 'modal');
-            }
+            // Navigate back regardless of save status, prioritizing user experience
+            window.location.href = backUrl;
         })
         .catch(error => {
-            console.error('Back navigation error:', error);
-            showError('Network error occurred. Draft not saved. Please try again.', 'modal');
+            // Network error on save, warn the user, then navigate
+            console.error('Back navigation error: Network issue during draft save. Navigating anyway.', error);
+            showError('Warning: Could not save draft due to a network error. Navigating back now.', 'modal');
+            
+            // Navigate after a brief delay to show the warning
+            setTimeout(() => {
+                window.location.href = backUrl;
+            }, 1000); 
         });
     };
 
-    // Form submission (Client-side validation)
+    // --- Form submission (Retaining standard HTML5 required validation) ---
+    // Since we removed character limit validation, we rely on the browser's native 'required' attribute validation.
     form.addEventListener('submit', function (e) {
-        if (isSubmitting) {
-            e.preventDefault();
-            return;
-        }
-
-        let hasExceededLimit = false;
-
-        textareas.forEach(({ element, counter }) => {
-            if (element.value.length > 1000) {
-                hasExceededLimit = true;
-                counter.style.color = '#dc3545';
-                counter.classList.add('char-limit-exceeded');
-            }
-        });
-
-        if (hasExceededLimit) {
-            e.preventDefault();
-            showError('Some responses exceed the 1000-character limit. Please shorten your answers or confirm to proceed.', 'inline');
-            
-            if (confirm('Some responses exceed the recommended character limit. Do you want to proceed anyway?')) {
-                isSubmitting = true;
-                this.submit();
-            }
-        }
+        // Standard form submission proceeds unless native validation fails.
     });
 
-    // Auto-save draft functionality
-    let autoSaveTimeout;
-    
-    form.addEventListener('input', function() {
-        clearTimeout(autoSaveTimeout);
-        autoSaveTimeout = setTimeout(function() {
-            const formData = new FormData(form);
-            formData.append('save_draft', 'true');
-
-            fetch(submitUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Auto-save failed with status:', response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data && data.status !== 'success') {
-                    console.error('Draft save error:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Auto-save network error:', error);
-                // Intentionally silent the error to avoid interrupting user flow
-            });
-        }, 2000);
-    });
+    // --- Auto-save functionality removed as it is unnecessary for simple radio buttons ---
 });

@@ -52,12 +52,14 @@ document.addEventListener('DOMContentLoaded', function () {
      * Updates the hidden 'professional_role_combined' field based on selected checkboxes.
      */
     function updateRoleSelection() {
+        console.log('Updating role selection');
         const legalChecked = legalCheckbox.checked;
         const customsChecked = customsCheckbox.checked;
         roleField.value = legalChecked && customsChecked ? 'both'
             : legalChecked ? 'legal'
             : customsChecked ? 'customs'
             : '';
+        console.log('roleField set to:', roleField.value);
         toggleExperienceSection(legalExpSection, legalChecked);
         toggleExperienceSection(customsExpSection, customsChecked);
     }
@@ -314,6 +316,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Improved Form Submission Validation ---
     form.addEventListener('submit', function(e) {
+        console.log('Form submit triggered');
+        console.log('Form data:', new FormData(form));
         let isValid = true;
         const errorMessages = [];
 

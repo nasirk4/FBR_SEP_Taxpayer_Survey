@@ -1,3 +1,4 @@
+/* --- static/css/cross_system_perspectives_styles.css --- */
 /* --- Section Description --- */
 .section-description {
     font-size: 0.95rem;
@@ -6,24 +7,8 @@
     font-style: italic;
 }
 
-/* --- Character Counter --- */
-.char-counter {
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 0.25rem;
-    text-align: right;
-}
-
-.char-limit-exceeded {
-    font-weight: bold;
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
-}
+/* * Character Counter styles removed (obsolete for radio-button-only page)
+ */
 
 /* --- Button Group --- */
 .buttons {
@@ -162,8 +147,7 @@
     border-radius: 0.25rem;
     box-sizing: border-box;
     transition: border-color 0.2s;
-    resize: vertical;
-    min-height: 120px;
+    /* Removed: resize: vertical; and min-height: 120px; as they are textarea-specific */
 }
 
 .form-control:focus {

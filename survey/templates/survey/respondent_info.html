@@ -24,14 +24,14 @@
 
         <div class="form-grid-wrapper">
             <div class="form-group">
-                <label for="full_name" class="form-label required">RI1: Full Name<span class="required-star">*</span></label>
+                <label for="full_name" class="form-label required">RI1: Full Name<span class="required-star"></span></label>
                 <input type="text" id="full_name" name="full_name" class="form-control"
                         placeholder="Enter your full name" required
                         value="{{ request.session.respondent_info.full_name|default:'' }}">
             </div>
 
             <div class="form-group">
-                <label for="email" class="form-label required">RI2: Email Address<span class="required-star">*</span></label>
+                <label for="email" class="form-label required">RI2: Email Address<span class="required-star"></span></label>
                 <input type="email" id="email" name="email" class="form-control"
                         placeholder="your.email@example.com" required
                         value="{{ request.session.respondent_info.email|default:'' }}">
@@ -45,7 +45,7 @@
             </div>
 
             <div class="form-group">
-                <label for="province_search" class="form-label required">RI4: Province<span class="required-star">*</span></label>
+                <label for="province_search" class="form-label required">RI4: Province/Area<span class="required-star"></span></label>
                 <div class="dropdown-container">
                     <input type="text" id="province_search" class="form-control"
                         placeholder="Type to search provinces..." autocomplete="off" required
@@ -60,7 +60,7 @@
             </div>
 
             <div class="form-group">
-                <label for="district_search" class="form-label required">RI5: District<span class="required-star">*</span></label>
+                <label for="district_search" class="form-label required">RI5: District<span class="required-star"></span></label>
                 <div class="dropdown-container">
                     <input type="text" id="district_search" class="form-control"
                             placeholder="Type to search districts..."
@@ -85,7 +85,7 @@
         <h2 id="section-title" class="section-title">💼 Professional Role(s)</h2>
 
         <p id="roles-description" class="form-label required">
-            RI6: Please select at least one professional role<span class="required-star" aria-hidden="true">*</span>:
+            RI6: Please select at least one professional role<span class="required-star" aria-hidden="true"></span>:
         </p>
 
         <div class="checkbox-group" role="group" aria-labelledby="roles-description">
@@ -200,7 +200,7 @@
             <div class="radio-item">
                 <input type="radio" id="kii_no" name="kii_consent" value="no"
                         {% if request.session.respondent_info.kii_consent == 'no' %}checked{% endif %}>
-                <label for="kii_no">No, I prefer not to participate in follow-up interviews</label>
+                <label for="kii_no">No, I prefer not to participate in follow-up discussion</label>
             </div>
         </div>
     </div>

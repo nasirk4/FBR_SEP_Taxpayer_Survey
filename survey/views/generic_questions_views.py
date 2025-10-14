@@ -72,13 +72,31 @@ def validate_generic_questions_form(request, context_data):
 
     try:
         # Validate G1: Policy Impact Matrix
-        validate_matrix_fields(request, context_data['g1_aspects'], 'g1', context_data['valid_options']['g1'], errors, generic_answers)
+        for aspect, _ in context_data['g1_aspects']:
+            value = request.POST.get(f'g1_{aspect}', '').strip()  # Get string value
+            if isinstance(value, (tuple, list)):
+                value = value[0] if value else ''  # Take first value if tuple/list
+            if not value:
+                errors.append(f"Please select an option for G1 {aspect.replace('_', ' ').title()}")
+            elif value not in context_data['valid_options']['g1']:
+                errors.append(f"Invalid value for G1 {aspect.replace('_', ' ').title()}")
+            generic_answers['g1'][aspect] = value
 
         # Validate G2: System Impact Matrix
-        validate_matrix_fields(request, context_data['g2_aspects'], 'g2', context_data['valid_options']['g2'], errors, generic_answers)
+        for aspect, _ in context_data['g2_aspects']:
+            value = request.POST.get(f'g2_{aspect}', '').strip()
+            if isinstance(value, (tuple, list)):
+                value = value[0] if value else ''
+            if not value:
+                errors.append(f"Please select an option for G2 {aspect.replace('_', ' ').title()}")
+            elif value not in context_data['valid_options']['g2']:
+                errors.append(f"Invalid value for G2 {aspect.replace('_', ' ').title()}")
+            generic_answers['g2'][aspect] = value
 
         # Validate G3: Technical Issues
         g3_value = request.POST.get('g3_technical_issues', '').strip()
+        if isinstance(g3_value, (tuple, list)):
+            g3_value = g3_value[0] if g3_value else ''
         if not g3_value:
             errors.append("Please select an option for G3 Technical Issues")
         elif g3_value not in context_data['valid_options']['g3_technical_issues']:
@@ -87,6 +105,8 @@ def validate_generic_questions_form(request, context_data):
 
         # Validate G4: Disruption (conditional)
         g4_value = request.POST.get('g4_disruption', '').strip()
+        if isinstance(g4_value, (tuple, list)):
+            g4_value = g4_value[0] if g4_value else ''
         if g3_value in context_data['g3_values_requiring_g4']:
             if not g4_value:
                 errors.append("Please select an option for G4 Disruption")
@@ -96,6 +116,8 @@ def validate_generic_questions_form(request, context_data):
 
         # Validate G5: Digital Literacy
         g5_value = request.POST.get('g5_digital_literacy', '').strip()
+        if isinstance(g5_value, (tuple, list)):
+            g5_value = g5_value[0] if g5_value else ''
         if not g5_value:
             errors.append("Please select an option for G5 Digital Literacy")
         elif g5_value not in context_data['valid_options']['g5_digital_literacy']:
@@ -105,9 +127,10 @@ def validate_generic_questions_form(request, context_data):
         return generic_answers, errors, len(errors) == 0
 
     except Exception as e:
-        logger.error(f"Error in validate_generic_questions_form: {e}")
+        logger.error(f"Error in validate_generic_questions_form: {str(e)}")
         errors.append("An unexpected error occurred during validation")
         return {}, errors, False
+
 
 def generic_questions_view(request):
     """Render the generic questions page (step 3) and handle form submission."""
@@ -155,7 +178,7 @@ def generic_questions_view(request):
                 survey_response.save()
 
             logger.info("Generic questions saved successfully, redirecting to legal practitioner section")
-            return redirect('survey:legal_practitioner')
+            return redirect('survey:role_specific_questions')
         
         # Handle GET request
         context = get_progress_context(current_step=3, total_steps=6)

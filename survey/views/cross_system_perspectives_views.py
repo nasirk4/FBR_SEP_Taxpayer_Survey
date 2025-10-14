@@ -32,10 +32,10 @@ def cross_system_perspectives_view(request):
 
             # Handle save_draft for auto-save and back navigation
             if request.POST.get('save_draft') == 'true':
+                # *** Updated field names to match HTML: xs1_data_discrepancy and xs2_policy_consistency ***
                 cross_system_answers = {
-                    'xs1_coordination_gap': sanitize_input(request.POST.get('xs1_coordination_gap', '')),
-                    'xs2_single_change': sanitize_input(request.POST.get('xs2_single_change', '')),
-                    'xs3_systemic_feedback': sanitize_input(request.POST.get('xs3_systemic_feedback', '')),
+                    'xs1_data_discrepancy': sanitize_input(request.POST.get('xs1_data_discrepancy', '')),
+                    'xs2_policy_consistency': sanitize_input(request.POST.get('xs2_policy_consistency', '')),
                     'saved_as_draft': True,
                     'draft_saved_at': timezone.now().isoformat()
                 }
@@ -51,10 +51,10 @@ def cross_system_perspectives_view(request):
                     return redirect('survey:cross_system_perspectives')
 
             # Process normal form submission (Next button)
+            # *** Updated field names to match HTML: xs1_data_discrepancy and xs2_policy_consistency ***
             cross_system_answers = {
-                'xs1_coordination_gap': sanitize_input(request.POST.get('xs1_coordination_gap', '')),
-                'xs2_single_change': sanitize_input(request.POST.get('xs2_single_change', '')),
-                'xs3_systemic_feedback': sanitize_input(request.POST.get('xs3_systemic_feedback', '')),
+                'xs1_data_discrepancy': sanitize_input(request.POST.get('xs1_data_discrepancy', '')),
+                'xs2_policy_consistency': sanitize_input(request.POST.get('xs2_policy_consistency', '')),
                 'completed_at': timezone.now().isoformat()
             }
 
@@ -78,7 +78,22 @@ def cross_system_perspectives_view(request):
 
     # GET request - load existing data if any
     cross_system_answers = request.session.get('cross_system_answers', {})
+    
+    # Define options for the radio buttons (must be compatible with both XS1 and XS2)
+    xs_options = [
+        ('always', 'Always / Almost Always'),
+        ('often', 'Often'),
+        ('sometimes', 'Sometimes'),
+        ('rarely', 'Rarely'),
+        ('never', 'Never / Almost Never'),
+        ('not_applicable', 'Not Applicable / Don\'t know')
+    ]
 
     context = get_progress_context(current_step=5, total_steps=6)
     context['cross_system_answers'] = cross_system_answers
+    context['xs1_options'] = xs_options # Using the same options for both questions
+    context['xs2_options'] = xs_options
+    
+    # Note: If XS2 options were different, they would be defined separately here.
+    
     return render(request, 'survey/cross_system_perspectives.html', context)
